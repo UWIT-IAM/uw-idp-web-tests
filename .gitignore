@@ -1,0 +1,5 @@
+.DS_STORE
+webdriver-report
+secrets.json
+/*/**/__pycache__/*
+

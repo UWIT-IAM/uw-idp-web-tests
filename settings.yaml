@@ -1,0 +1,32 @@
+# See docs/settings-and-options.md for more information
+base: &base
+  service_provider_instance_filters:
+    -
+      name: "tag:use_case"
+      values:
+        - idp-web-tests
+    -
+      name: "tag-key"
+      values:
+        - test_ref
+  aws_hosted_zone:
+    name: sandbox.iam.s.uw.edu
+    id: ZTMZX8EZCH1AH
+    # This is not corroborated against any given endpoint; this is the AWS default, and is used here for a polling task
+    # Override this to extend the wait time for propagation if necessary; will not change the
+    # actual host record.
+    ttl: 300
+  secret_manager:
+    project: uwit-mci-iam
+    secret_name: idp-web-test-config
+    version: latest
+  test_options:
+    # These are toggleable options. You can override them in a yaml section for reuse, or you can override them
+    # from the command line by "dasherizing" the option name.
+    # e.g., skip_test_service_provider_start can be
+    #       overridden by doing `pytest --skip-test-service-provider-start`
+    skip_test_service_provider_start: False
+    skip_test_service_provider_stop: False
+    hosts_file: /etc/hosts
+    use_local_secrets: false
+    local_secrets_filename: secrets.json
