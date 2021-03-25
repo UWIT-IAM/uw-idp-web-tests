@@ -57,8 +57,8 @@ def crazy_casing(netid: str) -> str:
     return ''.join(letters)
 
 
-def test_pwd_1_2_3(utils, browser, sp_url, sp_domain, new_tab, secrets, netid):
-    # 1
+def test_new_session_standard___existing_sso_session(utils, browser, sp_url, sp_domain, new_tab, secrets, netid):
+    # 1 New session, standard sign-in
     password = secrets.test_accounts.password
     sp = ServiceProviderInstance.diafine8
     with utils.using_test_sp(sp):
@@ -67,7 +67,7 @@ def test_pwd_1_2_3(utils, browser, sp_url, sp_domain, new_tab, secrets, netid):
         browser.click(Locators.submit_button)
         browser.wait_for_tag('h2', f'{sp_domain(sp)} sign-in success!')
 
-    # 2
+    # 2 Use existing pwd SSO session for sign-in
     sp = ServiceProviderInstance.diafine6
     with utils.using_test_sp(sp):
         new_tab()
@@ -84,7 +84,8 @@ def test_pwd_1_2_3(utils, browser, sp_url, sp_domain, new_tab, secrets, netid):
         browser.close()
 
 
-def test_pwd_4(utils, browser, sp_url, secrets, netid):
+def test_new_session_standard_bad_creds(utils, browser, sp_url, secrets, netid):
+    # 4 New session, standard sign-in, bad creds
     fresh_browser = Chrome()
     sp = ServiceProviderInstance.diafine6
     with utils.using_test_sp(sp):
@@ -104,7 +105,8 @@ def test_pwd_4(utils, browser, sp_url, secrets, netid):
         fresh_browser.close()
 
 
-def test_pwd_5(utils, browser, sp_url, secrets, netid, sp_domain, new_tab):
+def test_existing_sso_for_sign_in_with_forced_reauth(utils, browser, sp_url, secrets, netid, sp_domain, new_tab):
+    # 5 Use existing pwd SSO session for sign-in, combined with forced reauth
     fresh_browser = Chrome()
     sp = ServiceProviderInstance.diafine6
     with utils.using_test_sp(sp):
@@ -125,7 +127,8 @@ def test_pwd_5(utils, browser, sp_url, secrets, netid, sp_domain, new_tab):
         fresh_browser.close()
 
 
-def test_pwd_6(browser, netid, utils, sp_url, secrets, sp_domain):
+def test_idp_initiated_sign_in(browser, netid, utils, sp_url, secrets, sp_domain):
+    # 6 IdP-initiated sign-in
     fresh_browser = Chrome()
     sp = ServiceProviderInstance.diafine6
     with utils.using_test_sp(sp):
@@ -149,7 +152,8 @@ def test_pwd_6(browser, netid, utils, sp_url, secrets, sp_domain):
     partial(add_suffix, '@uw.edu'),
     partial(add_suffix, '@google.com')
 ])
-def test_pwd_7(browser, netid, utils, sp_url, secrets, sp_domain, login_transform):
+def test_new_session_sign_on_domain_credential(browser, netid, utils, sp_url, secrets, sp_domain, login_transform):
+    # 7 New session, sign on with @domain credential format
     fresh_browser = Chrome()
     login = login_transform(netid)
     password = secrets.test_accounts.password
@@ -159,16 +163,15 @@ def test_pwd_7(browser, netid, utils, sp_url, secrets, sp_domain, login_transfor
         fresh_browser.send_inputs(login, password)
         fresh_browser.click(Locators.submit_button)
         if 'google' not in login:
-            print('not google')
             fresh_browser.wait_for_tag('h2', f'{sp_domain(sp)} sign-in success!')
         else:
-            print('google')
             element = fresh_browser.wait_for_tag('p', 'Please sign in with your')
             assert ('Please sign in with your UW NetID' in element.text)
     fresh_browser.close()
 
 
-def test_pwd_8_9(browser, netid, utils, sp_url, secrets, sp_domain):
+def test_case_insensitivity___query_parameters(browser, netid, utils, sp_url, secrets, sp_domain):
+    # 8 Case insensitivity
     fresh_browser = Chrome()
     password = secrets.test_accounts.password
     sp = ServiceProviderInstance.diafine6
@@ -178,7 +181,7 @@ def test_pwd_8_9(browser, netid, utils, sp_url, secrets, sp_domain):
         fresh_browser.send_inputs(crazy_netid, password)
         fresh_browser.click(Locators.submit_button)
         fresh_browser.wait_for_tag('h2', f'{sp_domain(sp)} sign-in success!')
-        # 9
+        # 9 Query parameters
         fresh_browser.get(f'{sp_url(sp)}/shibprod/q-param-test.aspx?fname=Joe&lname=Smith&age=30')
         fresh_browser.wait_for_tag('h1', 'query parameters')
         element = fresh_browser.find_elements_by_tag_name('p')
