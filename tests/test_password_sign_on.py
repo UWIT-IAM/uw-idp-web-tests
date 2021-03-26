@@ -19,6 +19,15 @@ def browser() -> Chrome:
     return Chrome()
 
 
+@pytest.fixture(scope='class')
+def class_browser() -> Chrome:
+    browser = Chrome()
+    try:
+        yield browser
+    finally:  # Even if there is an error
+        browser.close()
+
+
 @pytest.fixture
 def new_tab(browser):
     def inner():
@@ -57,32 +66,45 @@ def crazy_casing(netid: str) -> str:
     return ''.join(letters)
 
 
-def test_new_session_standard___existing_sso_session(utils, browser, sp_url, sp_domain, new_tab, secrets, netid):
-    # 1 New session, standard sign-in
-    password = secrets.test_accounts.password
-    sp = ServiceProviderInstance.diafine8
-    with utils.using_test_sp(sp):
-        browser.get(f'{sp_url(sp)}/shibprod')
-        browser.send_inputs(netid, password)
-        browser.click(Locators.submit_button)
-        browser.wait_for_tag('h2', f'{sp_domain(sp)} sign-in success!')
+class TestNewSessionAndExistingSSOSession:
+    """
+    The two tests are grouped here only because they need to share the same browser instance.
+    """
+    @pytest.fixture(autouse=True)
+    def initialize(self, class_browser, utils, sp_url, netid, new_tab, sp_domain):
+        self.browser = class_browser
+        self.utils = utils
+        self.sp_url = sp_url
+        self.sp_domain = sp_domain
 
-    # 2 Use existing pwd SSO session for sign-in
-    sp = ServiceProviderInstance.diafine6
-    with utils.using_test_sp(sp):
-        new_tab()
-        with browser.autocapture_off():
-            browser.get(f'{sp_url(sp)}/shibprod')
-        browser.wait_for_tag('h2', f'{sp_domain(sp)} sign-in success!')
-    # 3 logout and close browser
-        with browser.autocapture_off():
-            browser.click_tag('a', 'Return to the main menu')
-        with browser.autocapture_off():
-            browser.wait_for_tag('h1', 'Diafine6 IdP Testing Platform')
-        browser.click_tag('a', 'Logout')
-        browser.wait_for_tag('span', 'Your UW NetID sign-in session has ended')
-        browser.close()
+    def test_new_session_standard(self, secrets, netid):
+        # 1 New session, standard sign-in
+        password = secrets.test_accounts.password
+        sp = ServiceProviderInstance.diafine8
+        with self.utils.using_test_sp(sp):
+            self.browser.get(f'{self.sp_url(sp)}/shibprod')
+            self.browser.send_inputs(netid, password)
+            self.browser.click(Locators.submit_button)
+            self.browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
 
+    def test_existing_sso_session(self, new_tab):
+        # 2 Use existing pwd SSO session for sign-in
+        sp = ServiceProviderInstance.diafine6
+        with self.utils.using_test_sp(sp):
+            new_tab()
+            with self.browser.autocapture_off():
+                self.browser.get(f'{self.sp_url(sp)}/shibprod')
+            self.browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
+        # 3 logout and close browser
+            with self.browser.autocapture_off():
+                self.browser.click_tag('a', 'Return to the main menu')
+            with self.browser.autocapture_off():
+                self.browser.wait_for_tag('h1', 'Diafine6 IdP Testing Platform')
+            self.browser.click_tag('a', 'Logout')
+            self.browser.wait_for_tag('span', 'Your UW NetID sign-in session has ended')
+            self.browser.close()
+
+# def test_new_session_standard___existing_sso_session(utils, browser, sp_url, sp_domain, new_tab, secrets, netid):
 
 def test_new_session_standard_bad_creds(utils, browser, sp_url, secrets, netid):
     # 4 New session, standard sign-in, bad creds
@@ -170,20 +192,33 @@ def test_new_session_sign_on_domain_credential(browser, netid, utils, sp_url, se
     fresh_browser.close()
 
 
-def test_case_insensitivity___query_parameters(browser, netid, utils, sp_url, secrets, sp_domain):
-    # 8 Case insensitivity
-    fresh_browser = Chrome()
-    password = secrets.test_accounts.password
-    sp = ServiceProviderInstance.diafine6
-    crazy_netid = crazy_casing(netid)
-    with utils.using_test_sp(sp):
-        fresh_browser.get(f'{sp_url(sp)}/shibprod')
-        fresh_browser.send_inputs(crazy_netid, password)
-        fresh_browser.click(Locators.submit_button)
-        fresh_browser.wait_for_tag('h2', f'{sp_domain(sp)} sign-in success!')
+class TestNetIDCaseInsensitivityAndURLQueryParams:
+    """
+    The two tests are grouped here only because they need to share the same browser instance.
+    """
+    @pytest.fixture(autouse=True)
+    def initialize(self, class_browser, secrets, utils, sp_url):
+        self.browser = class_browser
+        self.password = secrets.test_accounts.password
+        self.sp = ServiceProviderInstance.diafine6
+        self.utils = utils
+        self.sp_url = sp_url
+
+    def test_case_insensitivity(self, netid, secrets, sp_domain):
+        # 8 Case insensitivity
+        crazy_netid = crazy_casing(netid)
+        with self.utils.using_test_sp(self.sp):
+            self.browser.get(f'{self.sp_url(self.sp)}/shibprod')
+            self.browser.send_inputs(crazy_netid, self.password)
+            self.browser.click(Locators.submit_button)
+            self.browser.wait_for_tag('h2', f'{sp_domain(self.sp)} sign-in success!')
+
+    def test_query_parameters(self,  netid, secrets, sp_domain):
         # 9 Query parameters
-        fresh_browser.get(f'{sp_url(sp)}/shibprod/q-param-test.aspx?fname=Joe&lname=Smith&age=30')
-        fresh_browser.wait_for_tag('h1', 'query parameters')
-        element = fresh_browser.find_elements_by_tag_name('p')
-        for snippet in ('fname = Joe', 'lname = Smith', 'age = 30'):
-            assert (snippet in element[1].text)
+        with self.utils.using_test_sp(self.sp):
+            self.browser.snap()
+            self.browser.get(f'{self.sp_url(self.sp)}/shibprod/q-param-test.aspx?fname=Joe&lname=Smith&age=30')
+            self.browser.wait_for_tag('h1', 'query parameters')
+            element = self.browser.find_elements_by_tag_name('p')
+            for snippet in ('fname = Joe', 'lname = Smith', 'age = 30'):
+                assert (snippet in element[1].text)
