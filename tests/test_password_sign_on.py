@@ -71,11 +71,12 @@ class TestNewSessionAndExistingSSOSession:
     The two tests are grouped here only because they need to share the same browser instance.
     """
     @pytest.fixture(autouse=True)
-    def initialize(self, class_browser, utils, sp_url, netid, new_tab, sp_domain):
+    def initialize(self, class_browser, utils, sp_url, sp_domain, new_tab):
         self.browser = class_browser
         self.utils = utils
         self.sp_url = sp_url
         self.sp_domain = sp_domain
+        self.new_tab = new_tab
 
     def test_new_session_standard(self, secrets, netid):
         # 1 New session, standard sign-in
@@ -87,11 +88,11 @@ class TestNewSessionAndExistingSSOSession:
             self.browser.click(Locators.submit_button)
             self.browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
 
-    def test_existing_sso_session(self, new_tab):
+    def test_existing_sso_session(self):
         # 2 Use existing pwd SSO session for sign-in
         sp = ServiceProviderInstance.diafine6
         with self.utils.using_test_sp(sp):
-            new_tab()
+            self.new_tab()
             with self.browser.autocapture_off():
                 self.browser.get(f'{self.sp_url(sp)}/shibprod')
             self.browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
@@ -102,9 +103,7 @@ class TestNewSessionAndExistingSSOSession:
                 self.browser.wait_for_tag('h1', 'Diafine6 IdP Testing Platform')
             self.browser.click_tag('a', 'Logout')
             self.browser.wait_for_tag('span', 'Your UW NetID sign-in session has ended')
-            self.browser.close()
 
-# def test_new_session_standard___existing_sso_session(utils, browser, sp_url, sp_domain, new_tab, secrets, netid):
 
 def test_new_session_standard_bad_creds(utils, browser, sp_url, secrets, netid):
     # 4 New session, standard sign-in, bad creds
@@ -204,7 +203,7 @@ class TestNetIDCaseInsensitivityAndURLQueryParams:
         self.utils = utils
         self.sp_url = sp_url
 
-    def test_case_insensitivity(self, netid, secrets, sp_domain):
+    def test_case_insensitivity(self, netid, sp_domain):
         # 8 Case insensitivity
         crazy_netid = crazy_casing(netid)
         with self.utils.using_test_sp(self.sp):
@@ -213,7 +212,7 @@ class TestNetIDCaseInsensitivityAndURLQueryParams:
             self.browser.click(Locators.submit_button)
             self.browser.wait_for_tag('h2', f'{sp_domain(self.sp)} sign-in success!')
 
-    def test_query_parameters(self,  netid, secrets, sp_domain):
+    def test_query_parameters(self,  netid):
         # 9 Query parameters
         with self.utils.using_test_sp(self.sp):
             self.browser.snap()
