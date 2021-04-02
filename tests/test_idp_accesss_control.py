@@ -59,35 +59,78 @@ def netid04() -> str:
     return AccountNetid.sptest04.value
 
 
-def test_auto_2fa(browser, netid03, utils, sp_url, secrets, sp_domain, new_tab):
-    """
-    AC-1	Auto 2FA	diafine7, sptest03
-    a. Start new pwd session at https://diafine7.sandbox.iam.s.uw.edu/shibprod. Close browser.
-    b. Start pwd SSO session at https://diafine6.sandbox.iam.s.uw.edu/shibprod.
-        Use SSO to access https://diafine7.sandbox.iam.s.uw.edu/shibprod. Close browser.
-    """
+class TestAuto2fa:
+    @pytest.fixture(autouse=True)
+    def initialize(self, browser, netid03, utils, sp_url, secrets, sp_domain, new_tab):
+        self.browser = browser
+        self.netid03 = netid03
+        self.utils = utils
+        self.sp_url = sp_url
+        self.secrets = secrets
+        self.sp_domain = sp_domain
+        self.new_tab = new_tab
 
-    # a
-    fresh_browser = Chrome()
-    sp = ServiceProviderInstance.diafine7
-    with utils.using_test_sp(sp):
-        fresh_browser.get(f'{sp_url(sp)}/shibprod')
-        password = secrets.test_accounts.password
-        fresh_browser.send_inputs(netid03, password)
-        fresh_browser.click(Locators.submit_button)
-        fresh_browser.wait_for_tag('p', 'Use your 2fa device')
-        fresh_browser.close()
+    def test_diafine7_no_pw_sso_auto2fa(self):
+        """
+        AC-1	Auto 2FA	diafine7, sptest03
+        a. Start new pwd session at https://diafine7.sandbox.iam.s.uw.edu/shibprod. Close browser.
+        b. Start pwd SSO session at https://diafine6.sandbox.iam.s.uw.edu/shibprod.
+            Use SSO to access https://diafine7.sandbox.iam.s.uw.edu/shibprod. Close browser.
+        """
 
-    # b
-    fresh_browser = Chrome()
-    sp = ServiceProviderInstance.diafine6
-    with utils.using_test_sp(sp):
-        fresh_browser.get(f'{sp_url(sp)}/shibprod')
-        password = secrets.test_accounts.password
-        fresh_browser.send_inputs(netid03, password)
-        fresh_browser.click(Locators.submit_button)
-        fresh_browser.wait_for_tag('h2', f'{sp_domain(sp)} sign-in success!')
-        new_tab()
+        # a
+        fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine7
-        fresh_browser.get(f'{sp_url(sp)}/shibprod')
-        fresh_browser.wait_for_tag('p', 'Use your 2fa device')
+        with self.utils.using_test_sp(sp):
+            fresh_browser.get(f'{self.sp_url(sp)}/shibprod')
+            password = self.secrets.test_accounts.password
+            fresh_browser.send_inputs(self.netid03, password)
+            fresh_browser.click(Locators.submit_button)
+            fresh_browser.wait_for_tag('p', 'Use your 2fa device')
+            fresh_browser.close()
+
+        # b
+        fresh_browser = Chrome()
+        sp = ServiceProviderInstance.diafine6
+        with self.utils.using_test_sp(sp):
+            fresh_browser.get(f'{self.sp_url(sp)}/shibprod')
+            password = self.secrets.test_accounts.password
+            fresh_browser.send_inputs(self.netid03, password)
+            fresh_browser.click(Locators.submit_button)
+            fresh_browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
+            self.new_tab()
+            sp = ServiceProviderInstance.diafine7
+            fresh_browser.get(f'{self.sp_url(sp)}/shibprod')
+            fresh_browser.wait_for_tag('p', 'Use your 2fa device')
+            fresh_browser.close()
+
+    def test_diafine7_pwd_2fa(self):
+        """
+        c.  Start pwd SSO session at https://diafine6.sandbox.iam.s.uw.edu/shibprod.
+            Use SSO to access https://diafine7.sandbox.iam.s.uw.edu/shibprodforce.
+            Close browser.
+            -> Prompted for pwd then 2FA on diafine7.
+        """
+
+        # Start pwd SSO session at https://diafine6.sandbox.iam.s.uw.edu/shibprod.
+        fresh_browser = Chrome()
+        sp = ServiceProviderInstance.diafine6
+        with self.utils.using_test_sp(sp):
+            fresh_browser.get(f'{self.sp_url(sp)}/shibprod')
+            password = self.secrets.test_accounts.password
+            fresh_browser.send_inputs(self.netid03, password)
+            fresh_browser.click(Locators.submit_button)
+            fresh_browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
+        # Use SSO to access https://diafine7.sandbox.iam.s.uw.edu/shibprodforce.
+        sp = ServiceProviderInstance.diafine7
+        with self.utils.using_test_sp(sp):
+            fresh_browser.get(f'{self.sp_url(sp)}/shibprodforce')
+            password = self.secrets.test_accounts.password
+            fresh_browser.send_inputs(self.netid03, password)
+            fresh_browser.click(Locators.submit_button)
+            fresh_browser.wait_for_tag('p', 'Use your 2fa device')
+            fresh_browser.close()
+
+            """
+            BLOCKED ON TESTS D,E AND F DUE TO DUO IFRAME
+            """
