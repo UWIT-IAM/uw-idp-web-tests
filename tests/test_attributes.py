@@ -39,9 +39,41 @@ def test_attributes(browser, netid, utils, sp_url, sp_domain, secrets):
         fresh_browser.send_inputs(login, password)
         fresh_browser.click(Locators.submit_button)
         fresh_browser.wait_for_tag('h2', f'{sp_domain(sp)} sign-in success!')
+        # go to url to check saml properties
+        # https://diafine6.sandbox.iam.s.uw.edu/shibprod/server-vars.aspx
+        fresh_browser.get(f'{sp_url(sp)}/shibprod/server-vars.aspx')
+        element = fresh_browser.wait_for_tag('pre', f'{sp_domain(sp)}/')
+        assert ('cn = Lucy Mary Cartier' in element.text)
+        assert ('displayName = Lucy Mary Cartier' in element.text)
+        assert ('affiliation = employee@washington.edu;student@washington.edu;staff@washington.edu;member@washington.edu'
+                in element.text)
+        assert ('entitlement = urn:mace:dir:entitlement:common-lib-terms;urn:mace:incommon:entitlement:common:1'
+                in element.text)
+        assert ('eppn = sptest01@washington.edu' in element.text)
+        # eduPersonScopedAffiliation (scopedAffiliation)? - looks like eduPersonAffiliation (affiliation)
+        # eduPersonTargetedID (ePTID)?
+        # eduPersonTargetedID (attributePersistentID)?
+        assert ('employeeNumber = 000211350' in element.text)
+        assert ('givenName = Lucy Mary' in element.text)
+        assert ('homeDepartment = .TEST' in element.text)
+        assert ('gws_groups = urn:mace:washington.edu:groups:uw_iam_sp-test-groups_test-users;urn:mace:washington.edu:groups:uw_iam_sp-test-groups_test-users_subgroup' in element.text)
+        assert ('email = sptest01@uw.edu' in element.text)
+        # mailstop?
+        assert ('phone = +1 206 123-4567' in element.text)
+        assert ('preferredFirst = Lucy' in element.text)
+        assert ('preferredMiddle = Mary' in element.text)
+        assert ('preferredSurname = Cartier' in element.text)
+        # registeredGivenName?
+        # registeredSurname?
+        assert ('surname = Cartier' in element.text)
+        assert ('title = Crash Test Dummy' in element.text)
+        assert ('uwNetID = sptest01' in element.text)
+        assert ('uwEduEmail = sptest01@uw.edu' in element.text)
+        assert ('uwRegID = 6D99B6F8FB52F3B5A334175D689F6136' in element.text)
+        assert ('uwStudentID = 9780200' in element.text)
+        assert ('uwStudentSystemKey = 990200200' in element.text)
+        # Role (awsrole)?
+        # RoleSessionName (awsname)?
+        # SessionDuration (awssession)?
 
-        # response = requests.get(f'{sp_url(sp)}/shibprod')
-        # print('os.environ.keys()=', os.get)
-        # print('response.status_code=', response.status_code)
-        # print('response.headers=', response.headers['Content-Type'])
         fresh_browser.close()
