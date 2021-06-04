@@ -4,9 +4,11 @@ import inflection
 
 import pytest
 
+
 from tests.secret_manager import SecretManager
-from tests.helpers import WebTestUtils, load_settings
-from tests.models import WebTestSettings, TestOptions, ServiceProviderInstance, TestSecrets
+from tests.helpers import WebTestUtils, load_settings, CTRL_KEY
+from tests.models import WebTestSettings, TestOptions, ServiceProviderInstance, TestSecrets, AccountNetid
+from webdriver_recorder.browser import Chrome
 
 
 def pytest_addoption(parser):
@@ -14,6 +16,9 @@ def pytest_addoption(parser):
                      help="Use this if you want to provide a settings YAML file yourself.")
     parser.addoption('--settings-profile', default='base',
                      help="Use this if you want to use settings from a specific root node of the settings file.")
+    parser.addoption("--env", action="store", default="prod", help="Use this is you want to set the test environment "
+                                                                   "to eval or prod. Default environment is prod. "
+                                                                   "Usage: --env=eval or --env=prod")
     for field, f_config in TestOptions.__fields__.items():
         option_name = f'--{inflection.dasherize(field)}'
         help_text = f_config.field_info.description
@@ -61,6 +66,7 @@ def sp_url(utils) -> Callable[[ServiceProviderInstance], str]:
     """Convenience fixture to make this less unwieldy to include in f-strings."""
     return utils.service_provider_url
 
+
 @pytest.fixture
 def sp_domain(utils) -> Callable[[ServiceProviderInstance], str]:
     return utils.service_provider_domain
@@ -74,3 +80,63 @@ def secret_manager(settings):
 @pytest.fixture
 def secrets(secret_manager) -> TestSecrets:
     return secret_manager.get_secret_data(model_type=TestSecrets)
+
+
+@pytest.fixture(scope='session')
+def test_env(request):
+    """
+    Determines which environment the tests are run against, prod or eval. Prod is the default.
+    """
+    return request.config.getoption("--env")
+
+
+@pytest.fixture
+def browser() -> Chrome:
+    return Chrome()
+
+
+@pytest.fixture(scope='class')
+def class_browser() -> Chrome:
+    browser = Chrome()
+    try:
+        yield browser
+    finally:  # Even if there is an error
+        browser.close()
+
+
+@pytest.fixture
+def new_tab(browser):
+    def inner():
+        browser.execute_script("window.open('');")
+        browser.switch_to.window(browser.window_handles[-1])
+    return inner
+
+
+@pytest.fixture
+def close_tab(browser):
+    def inner():
+        browser.find_element_by_tag_name('body').send_keys(CTRL_KEY + 'w')
+    return inner
+
+
+@pytest.fixture
+def netid() -> str:
+    return AccountNetid.sptest01.value
+
+
+@pytest.fixture
+def clean_browser(browser: Chrome) -> Chrome:
+    browser.delete_all_cookies()
+    return browser
+
+
+# @pytest.fixture
+# def lower_upper_casing(netid: str):
+#     def inner():
+#         letters = list(netid)
+#         for i, letter in enumerate(letters):
+#             if i % 2 == 0:
+#                 letters[i] = letter.upper()
+#         return ''.join(letters)
+#     return inner()
+
