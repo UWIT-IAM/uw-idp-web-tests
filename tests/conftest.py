@@ -3,6 +3,7 @@ from typing import Callable
 import inflection
 
 import pytest
+from tests.helpers import Locators
 
 
 from tests.secret_manager import SecretManager
@@ -125,18 +126,59 @@ def netid() -> str:
 
 
 @pytest.fixture
+def netid3() -> str:
+    return AccountNetid.sptest03.value
+
+
+@pytest.fixture
+def netid6() -> str:
+    return AccountNetid.sptest06.value
+
+
+@pytest.fixture
+def netid7() -> str:
+    return AccountNetid.sptest07.value
+
+
+@pytest.fixture
+def netid8() -> str:
+    return AccountNetid.sptest08.value
+
+@pytest.fixture
 def clean_browser(browser: Chrome) -> Chrome:
     browser.delete_all_cookies()
     return browser
 
 
-# @pytest.fixture
-# def lower_upper_casing(netid: str):
-#     def inner():
-#         letters = list(netid)
-#         for i, letter in enumerate(letters):
-#             if i % 2 == 0:
-#                 letters[i] = letter.upper()
-#         return ''.join(letters)
-#     return inner()
+@pytest.fixture
+def my_fixture():
+    def _method(a, b):
+        return a*b
+    return _method
+
+
+@pytest.fixture
+def two_fa_submit_form(secrets):
+    def inner(current_browser):
+        current_browser.wait_for_tag('p', 'Use your 2FA device.')
+        current_browser.switch_to.frame(current_browser.find_element_by_id('duo_iframe'))
+        current_browser.execute_script("document.getElementById('passcode').click()")
+        passcode = secrets.test_accounts.duo_code
+        current_browser.execute_script("document.getElementsByClassName('passcode-input')[0].value=arguments[0]", passcode)
+        current_browser.snap()
+        current_browser.execute_script("document.getElementById('passcode').click()")
+    return inner
+
+
+@pytest.fixture
+def login_submit_form():
+    def inner(current_browser, netid, password):
+        """
+        Accepts a running browser session, a netid and password
+        """
+        current_browser.wait_for_tag('p', 'Please sign in.')
+        current_browser.send_inputs(netid, password)
+        current_browser.click(Locators.submit_button)
+    return inner
+
 

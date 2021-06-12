@@ -266,7 +266,7 @@ class Test2FASessionCRNs:
             fresh_browser.close()
 
 
-def test_remember_me_cookie(utils, sp_url, sp_domain, secrets, netid3, new_tab, test_env):
+def test_remember_me_cookie(utils, sp_url, sp_domain, secrets, netid3, test_env):
     """
     2FA-9 Remember me cookie
     """
@@ -337,7 +337,7 @@ def test_forget_me_admin():
     """
 
 
-def test_forget_me_self_service(utils, sp_url, sp_domain, secrets, netid3, new_tab, test_env):
+def test_forget_me_self_service(utils, sp_url, sp_domain, secrets, netid3, test_env):
     """
     2FA-11 Forget me (self-service)
     """
