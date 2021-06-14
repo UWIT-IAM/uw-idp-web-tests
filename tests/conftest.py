@@ -3,10 +3,13 @@ from typing import Callable
 import inflection
 
 import pytest
+from tests.helpers import Locators
+
 
 from tests.secret_manager import SecretManager
-from tests.helpers import WebTestUtils, load_settings
-from tests.models import WebTestSettings, TestOptions, ServiceProviderInstance, TestSecrets
+from tests.helpers import WebTestUtils, load_settings, CTRL_KEY
+from tests.models import WebTestSettings, TestOptions, ServiceProviderInstance, TestSecrets, AccountNetid
+from webdriver_recorder.browser import Chrome
 
 
 def pytest_addoption(parser):
@@ -14,6 +17,9 @@ def pytest_addoption(parser):
                      help="Use this if you want to provide a settings YAML file yourself.")
     parser.addoption('--settings-profile', default='base',
                      help="Use this if you want to use settings from a specific root node of the settings file.")
+    parser.addoption("--env", action="store", default="prod", help="Use this is you want to set the test environment "
+                                                                   "to eval or prod. Default environment is prod. "
+                                                                   "Usage: --env=eval or --env=prod")
     for field, f_config in TestOptions.__fields__.items():
         option_name = f'--{inflection.dasherize(field)}'
         help_text = f_config.field_info.description
@@ -61,6 +67,7 @@ def sp_url(utils) -> Callable[[ServiceProviderInstance], str]:
     """Convenience fixture to make this less unwieldy to include in f-strings."""
     return utils.service_provider_url
 
+
 @pytest.fixture
 def sp_domain(utils) -> Callable[[ServiceProviderInstance], str]:
     return utils.service_provider_domain
@@ -74,3 +81,104 @@ def secret_manager(settings):
 @pytest.fixture
 def secrets(secret_manager) -> TestSecrets:
     return secret_manager.get_secret_data(model_type=TestSecrets)
+
+
+@pytest.fixture(scope='session')
+def test_env(request):
+    """
+    Determines which environment the tests are run against, prod or eval. Prod is the default.
+    """
+    return request.config.getoption("--env")
+
+
+@pytest.fixture
+def browser() -> Chrome:
+    return Chrome()
+
+
+@pytest.fixture(scope='class')
+def class_browser() -> Chrome:
+    browser = Chrome()
+    try:
+        yield browser
+    finally:  # Even if there is an error
+        browser.close()
+
+
+@pytest.fixture
+def new_tab(browser):
+    def inner():
+        browser.execute_script("window.open('');")
+        browser.switch_to.window(browser.window_handles[-1])
+    return inner
+
+
+@pytest.fixture
+def close_tab(browser):
+    def inner():
+        browser.find_element_by_tag_name('body').send_keys(CTRL_KEY + 'w')
+    return inner
+
+
+@pytest.fixture
+def netid() -> str:
+    return AccountNetid.sptest01.value
+
+
+@pytest.fixture
+def netid3() -> str:
+    return AccountNetid.sptest03.value
+
+
+@pytest.fixture
+def netid6() -> str:
+    return AccountNetid.sptest06.value
+
+
+@pytest.fixture
+def netid7() -> str:
+    return AccountNetid.sptest07.value
+
+
+@pytest.fixture
+def netid8() -> str:
+    return AccountNetid.sptest08.value
+
+@pytest.fixture
+def clean_browser(browser: Chrome) -> Chrome:
+    browser.delete_all_cookies()
+    return browser
+
+
+@pytest.fixture
+def my_fixture():
+    def _method(a, b):
+        return a*b
+    return _method
+
+
+@pytest.fixture
+def two_fa_submit_form(secrets):
+    def inner(current_browser):
+        current_browser.wait_for_tag('p', 'Use your 2FA device.')
+        current_browser.switch_to.frame(current_browser.find_element_by_id('duo_iframe'))
+        current_browser.execute_script("document.getElementById('passcode').click()")
+        passcode = secrets.test_accounts.duo_code
+        current_browser.execute_script("document.getElementsByClassName('passcode-input')[0].value=arguments[0]", passcode)
+        current_browser.snap()
+        current_browser.execute_script("document.getElementById('passcode').click()")
+    return inner
+
+
+@pytest.fixture
+def login_submit_form():
+    def inner(current_browser, netid, password):
+        """
+        Accepts a running browser session, a netid and password
+        """
+        current_browser.wait_for_tag('p', 'Please sign in.')
+        current_browser.send_inputs(netid, password)
+        current_browser.click(Locators.submit_button)
+    return inner
+
+

@@ -43,6 +43,7 @@ class AccountNetid(Enum):
     sptest06 = 'sptest06'
     sptest07 = 'sptest07'
     sptest08 = 'sptest08'
+    sptest10 = 'sptest10'
 
 
 # Test Suite Models
