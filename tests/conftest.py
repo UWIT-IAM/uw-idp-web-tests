@@ -131,6 +131,11 @@ def netid3() -> str:
 
 
 @pytest.fixture
+def netid4() -> str:
+    return AccountNetid.sptest04.value
+
+
+@pytest.fixture
 def netid6() -> str:
     return AccountNetid.sptest06.value
 
