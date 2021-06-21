@@ -22,7 +22,7 @@ class TestCondAccessNonMember:
 
     def test_a(self):
         """
-        Access error URL returned on diafine9.
+        a. Access error URL returned on diafine9.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine9
@@ -35,7 +35,7 @@ class TestCondAccessNonMember:
 
     def test_b(self):
         """
-        Access denied on diafine9. Access error URL returned.
+        b. Access denied on diafine9. Access error URL returned.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine6
@@ -72,9 +72,6 @@ class TestCondAccessNonMember:
 
     def test_d(self):
         """
-        d. Start 2FA session at https://diafine6.sandbox.iam.s.uw.edu/shibevalmfa.
-        Use SSO to access https://diafine9.sandbox.iam.s.uw.edu/shibevalmfa.
-        Close browser.
         d. Access denied on diafine9. Access error URL returned.
         """
         fresh_browser = Chrome()
@@ -94,9 +91,6 @@ class TestCondAccessNonMember:
 
     def test_e(self):
         """
-        e. Start 2FA session at https://diafine6.sandbox.iam.s.uw.edu/shibevalmfa.
-        Use SSO to access https://diafine9.sandbox.iam.s.uw.edu/shibevalmfaforce.
-        Close browser.
         e. Prompted for pwd, then 2FA, then access denied on diafine9. Access error URL returned.
         """
         fresh_browser = Chrome()

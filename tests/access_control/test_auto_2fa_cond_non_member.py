@@ -22,8 +22,7 @@ class TestAuto2faCondAccessNonMember:
 
     def test_a(self):
         """
-        a. Prompted for pwd, then 2FA, then access denied on diafine10.
-        Access error URL returned.
+        a. Prompted for pwd, then 2FA, then access denied on diafine10.  Access error URL returned.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine10
@@ -36,8 +35,7 @@ class TestAuto2faCondAccessNonMember:
 
     def test_b(self):
         """
-         b. Prompted for 2FA then access denied on diafine10.
-        Access error URL returned.
+         b. Prompted for 2FA then access denied on diafine10.  Access error URL returned.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine6
@@ -55,8 +53,7 @@ class TestAuto2faCondAccessNonMember:
 
     def test_c(self):
         """
-        c. Prompted for pwd, then 2FA, then access denied on diafine10.
-         Access error URL returned.
+        c. Prompted for pwd, then 2FA, then access denied on diafine10.  Access error URL returned.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine6
@@ -94,7 +91,6 @@ class TestAuto2faCondAccessNonMember:
     def test_e(self):
         """
          e. Prompted for pwd, then 2FA, then access denied on diafine10. Access error URL returned.
-         Close browser.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine6
@@ -114,9 +110,7 @@ class TestAuto2faCondAccessNonMember:
 
     def test_f(self):
         """
-        f. Start new 2FA session at https://diafine10.sandbox.iam.s.uw.edu/shibevalmfa.
         f. Prompted for pwd then 2FA, then access denied on diafine10 (no 500 error). Access error URL returned.
-        Close browser.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine10

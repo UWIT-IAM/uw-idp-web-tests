@@ -35,9 +35,6 @@ class TestCondAccessMember:
 
     def test_b(self):
         """
-        b. Start pwd SSO session at https://diafine6.sandbox.iam.s.uw.edu/shibeval.
-        Use SSO to access https://diafine10.sandbox.iam.s.uw.edu/shibeval.
-        Close browser.
         b. Prompted for 2FA only on diafine10.
         """
         fresh_browser = Chrome()

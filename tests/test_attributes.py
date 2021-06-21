@@ -70,7 +70,20 @@ def test_attributes(browser, netid, utils, sp_url, sp_domain, secrets, test_env)
         content_clean = content.get_attribute('innerHTML')
         attribute_data = [item.strip() for item in content_clean.split("<br>")]
 
+        # eduPersonScopedAffiliation is a unique case
+        wanted_key = 'eduPersonScopedAffiliation'
+        result = list(filter(lambda x: x.startswith(wanted_key), attribute_data))
+        found_values = result[0].split("= ", 1)[1].split(";")
+
         for key, value in attributes_to_test.items():
             # matches on exact string only. mail won't count as a match for uwEduEmail and uwEduEmail won't match mail
-            assert (f'{key} = {value}' in attribute_data)
+            if key != 'eduPersonScopedAffiliation':
+                assert (f'{key} = {value}' in attribute_data)
+            # eduPersonScopedAffiliation values may not be in the same order every time.
+            elif key == 'eduPersonScopedAffiliation':
+                assert len(found_values) == 4
+                assert 'employee@washington.edu' in found_values
+                assert 'student@washington.edu' in found_values
+                assert 'staff@washington.edu' in found_values
+                assert 'member@washington.edu' in found_values
         fresh_browser.close()

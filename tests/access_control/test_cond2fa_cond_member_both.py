@@ -110,9 +110,7 @@ class TestCond2faCondGroupMemberBoth:
 
     def test_f(self):
         """
-        f. Start new 2FA session at https://diafine11.sandbox.iam.s.uw.edu/shibevalmfa.
         f. Prompted for pwd then 2FA on diafine11 (no 500 error).
-        Close browser.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine11

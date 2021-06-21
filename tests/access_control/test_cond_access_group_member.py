@@ -66,7 +66,7 @@ class TestCondAccessGroupMember:
 
     def test_d(self):
         """
-        No prompts on diafine9.
+        d. No prompts on diafine9.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine6
@@ -83,10 +83,7 @@ class TestCondAccessGroupMember:
 
     def test_e(self):
         """
-        Start 2FA session at https://diafine6.sandbox.iam.s.uw.edu/shibevalmfa.
-        Use SSO to access https://diafine9.sandbox.iam.s.uw.edu/shibevalmfaforce.
-        Close browser.
-        Prompted for pwd then 2FA on diafine9.
+        e. Prompted for pwd then 2FA on diafine9.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine6

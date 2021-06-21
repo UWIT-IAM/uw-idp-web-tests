@@ -17,6 +17,13 @@ The order of precedence becomes:
 To that end, it's important to remember that "settings" can only be controlled via yaml, but "options" can be 
 toggled at the command line.
 
+## Running against prod or eval
+
+The tests can be run against the production environment or the test/eval environment
+To run the tests against production use the command line argument `--env=prod`
+To run the tests against production use the command line argument `--env=eval`
+If you do not use the `--env` flag, the tests will run against production as default.
+
 ## Switching profiles
 
 If you want to run tests using a different set of settings, you can override this two ways.

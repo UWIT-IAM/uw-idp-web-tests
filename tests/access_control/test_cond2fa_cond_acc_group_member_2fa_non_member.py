@@ -51,10 +51,7 @@ class TestCond2faAccGroupNonMember2fa:
 
     def test_c(self):
         """
-        c. Start pwd SSO session at https://diafine6.sandbox.iam.s.uw.edu/shibeval.
-        Use SSO to access https://diafine11.sandbox.iam.s.uw.edu/shibevalforce.
         c. Prompted for pwd on diafine11.
-        Close browser.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine6

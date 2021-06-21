@@ -23,7 +23,6 @@ class TestCond2faNonMemberBoth:
     def test_a(self):
         """
         a. Prompted for pwd, then access denied on diafine11. Access error URL returned.
-        Close browser.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine11
@@ -52,10 +51,7 @@ class TestCond2faNonMemberBoth:
 
     def test_c(self):
         """
-        c. Start pwd SSO session at https://diafine6.sandbox.iam.s.uw.edu/shibeval.
-        Use SSO to access https://diafine11.sandbox.iam.s.uw.edu/shibevalforce.
         c. Prompted for pwd, then access denied on diafine11. Access error URL returned.
-        Close browser.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine6
@@ -74,7 +70,6 @@ class TestCond2faNonMemberBoth:
     def test_d(self):
         """
         d. Access denied on diafine11. Access error URL returned.
-        Close browser.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine6
@@ -92,8 +87,7 @@ class TestCond2faNonMemberBoth:
 
     def test_e(self):
         """
-        e. Prompted for pwd, then 2FA, then access denied on diafine11.
-         Access error URL returned.
+        e. Prompted for pwd, then 2FA, then access denied on diafine11.  Access error URL returned.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine6
@@ -113,8 +107,7 @@ class TestCond2faNonMemberBoth:
 
     def test_f(self):
         """
-        f. Prompted for pwd then 2FA, then access denied on diafine11 (no 500 error).
-        Access error URL returned.
+        f. Prompted for pwd then 2FA, then access denied on diafine11 (no 500 error).  Access error URL returned.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine11
@@ -124,4 +117,3 @@ class TestCond2faNonMemberBoth:
             self.two_fa_submit_form(fresh_browser)
             fresh_browser.wait_for_tag('p', 'You are not authorized to access the application:')
             fresh_browser.close()
-
