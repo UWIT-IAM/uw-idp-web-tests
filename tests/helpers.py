@@ -13,7 +13,7 @@ from typing_extensions import Literal
 from waiter import wait
 from webdriver_recorder.browser import Locator, SearchMethod
 
-from .models import ServiceProviderInstance, WebTestSettings, HostedZoneSettings, \
+from .models import ServiceProviderInstance, TestSecrets, WebTestSettings, HostedZoneSettings, \
     StartInstancesRequest, StopInstancesRequest, DescribeInstancesRequest, DescribeInstancesResponse, \
     UpdateRoute53Record, AWSRoute53ChangeBatch, AWSRoute53RecordSetChange, AWSRoute53RecordSet, \
     AWSRoute53ResourceRecord, AWSEC2InstanceStateName, AWSEC2InstanceFilter, ServiceProviderConfig
@@ -50,7 +50,7 @@ def lookup_domain_ip(domain: str):
 
 
 def load_settings(filename: str, env: str,
-                  option_overrides: Optional[Dict[str, Any]] = None, **kwargs):
+                  option_overrides: Optional[Dict[str, Any]] = None, **kwargs) -> WebTestSettings:
     """Given the file name and the profile name, loads the YAML and returns the settings model."""
     option_overrides = option_overrides or {}
     kwargs = {k: v for k,v in kwargs.items() if v is not None}
@@ -88,17 +88,23 @@ def dry_runnable_operation(dry_run=False):
 class ServiceProviderAWSOperations:
     """Various functions to start and stop AWS EC2 instances."""
     def __init__(self,
+                 test_secrets: TestSecrets,
                  service_provider_instance_filters: List[AWSEC2InstanceFilter],
                  hosted_zone_settings: HostedZoneSettings, utils: WebTestUtils):
         self._clients = {}
         self._sp_instance_filters = service_provider_instance_filters
         self._zone_settings = hosted_zone_settings
         self._utils = utils
+        self._secrets = test_secrets.env
         self.service_providers = self._build_sp_configs()
 
     def _get_lazy_cache_client(self, client: Literal['ec2', 'route53']):
         if client not in self._clients:
-            self._clients[client] = boto3.client(client)
+            self._clients[client] = boto3.client(
+                client,
+                aws_access_key_id=self._secrets['AWS_ACCESS_KEY_ID'].get_secret_value(),
+                aws_secret_access_key=self._secrets['AWS_SECRET_ACCESS_KEY'].get_secret_value()
+            )
         return self._clients[client]
 
     def _build_sp_configs(self) -> Dict[ServiceProviderInstance, ServiceProviderConfig]:
@@ -260,14 +266,16 @@ class WebTestUtils:
         utils.do_work()
     ```
     """
-    def __init__(self, settings: WebTestSettings):
+    def __init__(self, settings: WebTestSettings, secrets: TestSecrets):
         self._settings = settings
+        self._secrets = secrets
         self._sp_aws_ops = None
 
     @property
     def sp_aws_operations(self) -> ServiceProviderAWSOperations:
         if not self._sp_aws_ops:
             self._sp_aws_ops = ServiceProviderAWSOperations(
+                self._secrets,
                 self._settings.service_provider_instance_filters,
                 self._settings.aws_hosted_zone,
                 self)

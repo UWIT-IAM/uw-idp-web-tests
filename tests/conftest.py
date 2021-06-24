@@ -23,6 +23,8 @@ def pytest_addoption(parser):
     for field, f_config in TestOptions.__fields__.items():
         option_name = f'--{inflection.dasherize(field)}'
         help_text = f_config.field_info.description
+        if not f_config.field_info.extra.get('add_cli_arg', True):
+            continue
         option_default = f_config.default
         option_type = f_config.type_
         kwargs = dict(default=option_default, help=help_text)
@@ -41,8 +43,13 @@ def settings(request) -> WebTestSettings:
 
 
 @pytest.fixture(scope='session')
-def utils(settings: WebTestSettings) -> WebTestUtils:
-    return WebTestUtils(settings)
+def report_title(settings) -> str:
+    return settings.test_options.report_title
+
+
+@pytest.fixture(scope='session')
+def utils(settings: WebTestSettings, secrets: TestSecrets) -> WebTestUtils:
+    return WebTestUtils(settings, secrets)
 
 
 @pytest.fixture(scope='session', autouse=True)
