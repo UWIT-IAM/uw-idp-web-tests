@@ -1,118 +1,95 @@
-import pytest
-from webdriver_recorder.browser import Chrome
+from tests.access_control import AccessControlTestBase
 from tests.models import ServiceProviderInstance
 
 
-class TestAuto2fa:
-    @pytest.fixture(autouse=True)
-    def initialize(self, utils, secrets, sp_url, test_env, sp_domain, two_fa_submit_form, login_submit_form):
-        self.utils = utils
-        self.sp_url = sp_url
-        self.sp_domain = sp_domain
-        self.password = secrets.test_accounts.password
-        self.passcode = secrets.test_accounts.duo_code
-        self.test_env = test_env
-        self.two_fa_submit_form = two_fa_submit_form
-        self.login_submit_form = login_submit_form
-
+class TestAuto2fa(AccessControlTestBase):
     def test_auto_2fa_a(self, netid3):
         """
-        AC-1 Part A. Prompted for pwd then 2FA on diafine7.
+        AC-1 Part A
         """
-        fresh_browser = Chrome()
+        # Prompted for pwd then 2FA on diafine7.
         sp = ServiceProviderInstance.diafine7
         with self.utils.using_test_sp(sp):
-            fresh_browser.get(f'{self.sp_url(sp)}/shib{self.test_env}')
-            self.login_submit_form(fresh_browser, netid3, self.password)
-            self.two_fa_submit_form(fresh_browser)
-
-            fresh_browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
-            fresh_browser.close()
+            self.browser.get(self.sp_shib_url(sp))
+            self.log_in_netid(self.browser, netid3, assert_success=False)
+            self.enter_duo_passcode(self.browser)
 
     def test_auto_2fa_b(self, netid3):
         """
-        AC-1 Part B. Prompted for 2FA only on diafine7.
+        AC-1 Part B
         """
-        fresh_browser = Chrome()
+        # b. Prompted for 2FA only on diafine7.
         sp = ServiceProviderInstance.diafine6
         with self.utils.using_test_sp(sp):
-            fresh_browser.get(f'{self.sp_url(sp)}/shib{self.test_env}')
-            self.login_submit_form(fresh_browser, netid3, self.password)
-            fresh_browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
+            self.browser.get(self.sp_shib_url(sp))
+            self.log_in_netid(self.browser, netid3, match_service_provider=sp)
 
         sp = ServiceProviderInstance.diafine7
         with self.utils.using_test_sp(sp):
-            fresh_browser.get(f'{self.sp_url(sp)}/shib{self.test_env}')
-            self.two_fa_submit_form(fresh_browser)
-            fresh_browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
+            self.browser.get(self.sp_shib_url(sp))
+            self.enter_duo_passcode(self.browser)
+            self.browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
 
     def test_auto_2fa_c(self, netid3):
         """
-        AC-1 Part C. Prompted for pwd then 2FA on diafine7.
+        AC-1 Part C
         """
-        #
-        fresh_browser = Chrome()
+        # Prompted for pwd then 2FA on diafine7.
         sp = ServiceProviderInstance.diafine6
         with self.utils.using_test_sp(sp):
-            fresh_browser.get(f'{self.sp_url(sp)}/shib{self.test_env}')
-            self.login_submit_form(fresh_browser, netid3, self.password)
-            fresh_browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
+            with self.browser.tab_context():
+                self.browser.get(self.sp_shib_url(sp))
+                self.log_in_netid(self.browser, netid3, match_service_provider=sp)
 
         sp = ServiceProviderInstance.diafine7
         with self.utils.using_test_sp(sp):
-            fresh_browser.get(f'{self.sp_url(sp)}/shib{self.test_env}force')
-            self.login_submit_form(fresh_browser, netid3, self.password)
-            self.two_fa_submit_form(fresh_browser)
-            fresh_browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
-            fresh_browser.close()
+            with self.browser.tab_context():
+                self.browser.get(self.sp_shib_url(sp, append='force'))
+                self.log_in_netid(self.browser, netid3, match_service_provider=sp, assert_success=False)
+                self.enter_duo_passcode(self.browser)
 
     def test_auto_2fa_d(self, netid3):
         """
-        AC-1 Part D. No prompts on diafine7.
+        AC-1 Part D
         """
-        fresh_browser = Chrome()
+        # d. No prompts on diafine7.
         sp = ServiceProviderInstance.diafine6
         with self.utils.using_test_sp(sp):
-            fresh_browser.get(f'{self.sp_url(sp)}/shib{self.test_env}mfa')
-            self.login_submit_form(fresh_browser, netid3, self.password)
-            self.two_fa_submit_form(fresh_browser)
-            fresh_browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
+            self.browser.get(self.sp_shib_url(sp, append='mfa'))
+            self.log_in_netid(self.browser, netid3, match_service_provider=sp, assert_success=False)
+            self.enter_duo_passcode(self.browser, match_service_provider=sp)
 
         sp = ServiceProviderInstance.diafine7
         with self.utils.using_test_sp(sp):
-            fresh_browser.get(f'{self.sp_url(sp)}/shib{self.test_env}mfa')
-            fresh_browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
-            fresh_browser.close()
+            self.browser.get(self.sp_shib_url(sp, append='mfa'))
+            self.browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
 
     def test_auto_2fa_e(self, netid3):
         """
-        AC-1 Part E. Prompted for pwd then 2FA on diafine7.
+        AC-1 Part E
         """
-        fresh_browser = Chrome()
+        # Prompted for pwd then 2FA on diafine7.
         sp = ServiceProviderInstance.diafine6
         with self.utils.using_test_sp(sp):
-            fresh_browser.get(f'{self.sp_url(sp)}/shib{self.test_env}mfa')
-            self.login_submit_form(fresh_browser, netid3, self.password)
-            self.two_fa_submit_form(fresh_browser)
-            fresh_browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
+            self.browser.get(self.sp_shib_url(sp, append='mfa'))
+            self.log_in_netid(self.browser, netid3, match_service_provider=sp, assert_success=False)
+            self.enter_duo_passcode(self.browser, match_service_provider=sp)
 
         sp = ServiceProviderInstance.diafine7
         with self.utils.using_test_sp(sp):
-            fresh_browser.get(f'{self.sp_url(sp)}/shib{self.test_env}mfaforce')
-            self.login_submit_form(fresh_browser, netid3, self.password)
-            self.two_fa_submit_form(fresh_browser)
-            fresh_browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
-            fresh_browser.close()
+            self.browser.get(self.sp_shib_url(sp, append='mfaforce'))
+            self.log_in_netid(self.browser, netid3, match_service_provider=sp, assert_success=False)
+            self.enter_duo_passcode(self.browser, match_service_provider=sp)
 
     def test_auto_2fa_f(self, netid3):
         """
-        AC-1 Part F. Prompted for pwd then 2FA on diafine7 (no 500 error).
+        AC-1 Part F
         """
-        fresh_browser = Chrome()
+        # f. Start new 2FA session at https://diafine7.sandbox.iam.s.uw.edu/shibevalmfa.
+        # Close browser.
+        # Prompted for pwd then 2FA on diafine7 (no 500 error).
         sp = ServiceProviderInstance.diafine7
         with self.utils.using_test_sp(sp):
-            fresh_browser.get(f'{self.sp_url(sp)}/shib{self.test_env}mfa')
-            self.login_submit_form(fresh_browser, netid3, self.password)
-            self.two_fa_submit_form(fresh_browser)
-            fresh_browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
-            fresh_browser.close()
+            self.browser.get(self.sp_shib_url(sp, append='mfa'))
+            self.log_in_netid(self.browser, netid3, match_service_provider=sp, assert_success=False)
+            self.enter_duo_passcode(self.browser, match_service_provider=sp)

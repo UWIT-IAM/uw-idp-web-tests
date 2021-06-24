@@ -2,7 +2,7 @@
 name = "uw-idp-web-tests"
 version = "0.1.0"
 description = ""
-authors = ["Tom Thorogood <tom@tomthorogood.com>"]
+authors = ["Tom Thorogood <goodtom@uw.edu>", "Glen Goulter <glenrg@uw.edu>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"

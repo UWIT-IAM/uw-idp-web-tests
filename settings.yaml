@@ -20,7 +20,7 @@ base: &base
     project: uwit-mci-iam
     secret_name: idp-web-test-config
     version: latest
-  test_options:
+  test_options: &base_test_options
     # These are toggleable options. You can override them in a yaml section for reuse, or you can override them
     # from the command line by "dasherizing" the option name.
     # e.g., skip_test_service_provider_start can be
@@ -30,3 +30,22 @@ base: &base
     hosts_file: /etc/hosts
     use_local_secrets: false
     local_secrets_filename: secrets.json
+    report_title: UW IdP Web Tests
+
+
+docker_compose:
+  <<: *base
+  test_options:
+    <<: *base_test_options
+    selenium_server: selenium:4444
+
+
+# Run with --settings-profile in_development to
+# run tests against eval quickly
+# without shutting down service providers.
+in_development:
+  <<: *base
+  test_options:
+    skip_test_service_provider_start: True
+    skip_test_service_provider_stop: True
+    env: eval

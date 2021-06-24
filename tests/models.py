@@ -2,7 +2,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import List, Dict, Optional, Any
 
-from pydantic import BaseModel, Field, Extra, BaseSettings, validator
+from pydantic import BaseModel, Field, Extra, BaseSettings, SecretStr, validator
 import inflection
 
 
@@ -89,12 +89,12 @@ class SecretManagerSettings(BaseModel):
 
 
 class TestAccountSecrets(BaseModel):
-    password: str
-    duo_code: str = Field(..., alias='duoCode')
+    password: SecretStr
+    duo_code: SecretStr = Field(..., alias='duoCode')
 
 
 class TestSecrets(BaseModel):
-    env: Dict[str, str]
+    env: Dict[str, SecretStr]
     test_accounts: TestAccountSecrets = Field(..., alias='testAccounts')
 
 

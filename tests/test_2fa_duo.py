@@ -3,264 +3,205 @@ This set of tests is based on the manual tests found in the
 IdP Release Candidate Test Matrix Version 4.2.4 (5/27/2021) here
 https://wiki.cac.washington.edu/display/SMW/IAM+Team+Wiki
 
-2FA-1 thru 2FA-11. 2FA-8b and 2FA-10 are not yet automate-able.
+2FA-1 thru 2FA-11. 2FA-8b and 2FA-10 are not yet automatable.
 """
-import pytest
 from webdriver_recorder.browser import Chrome
 from tests.helpers import Locators
-from tests.models import ServiceProviderInstance, AccountNetid
+from tests.models import ServiceProviderInstance
+import pytest
 
 
-def test_new_session_no_duo(utils, sp_url, sp_domain, secrets, netid, test_env):
+
+def add_suffix(suffix: str, netid: str) -> str:
+    return f'{netid}{suffix}'
+
+
+def test_new_session_no_duo(utils, sp_url, sp_domain, secrets, netid, test_env, fresh_browser, sp_shib_url):
     """
     2FA-1 New session, 2FA sign-in, user doesn't have a Duo account or a TAWS CRN.
     """
-    # diafine6, sptest01
-    fresh_browser = Chrome()
     sp = ServiceProviderInstance.diafine6
     with utils.using_test_sp(sp):
-        fresh_browser.get(f'{sp_url(sp)}/shib{test_env}mfa')
-        password = secrets.test_accounts.password
+        fresh_browser.get(sp_shib_url(sp, append='mfa'))
+        password = secrets.test_accounts.password.get_secret_value()
         fresh_browser.send_inputs(netid, password)
         fresh_browser.click(Locators.submit_button)
         fresh_browser.wait_for_tag('p', 'The application you requested requires two-factor authentication (2FA)')
-        fresh_browser.close()
 
 
+@pytest.mark.usefixtures('fresh_class_browser')
 class TestNew2FASessionAndExisting2FASession:
+    browser: Chrome
+
     """
     The two tests are grouped here only because they need to share the same browser instance.
     """
-    @pytest.fixture(autouse=True)
-    def initialize(self, class_browser, utils, sp_url, sp_domain, new_tab, test_env):
-        self.browser = class_browser
-        self.utils = utils
-        self.sp_url = sp_url
-        self.sp_domain = sp_domain
-        self.new_tab = new_tab
-        self.test_env = test_env
 
-    def test_2fa_signin(self, secrets, netid3):
+    @pytest.fixture(autouse=True)
+    def initialize(self, utils, sp_domain, sp_shib_url):
+        self.utils = utils
+        self.sp_domain = sp_domain
+        self.sp_shib_url = sp_shib_url
+
+    def test_2fa_signin(self, secrets, netid3, enter_duo_passcode, log_in_netid):
         """
         2FA-2 New session, 2FA sign-in
         """
 
+        password = secrets.test_accounts.password.get_secret_value()
+
         sp = ServiceProviderInstance.diafine6
         with self.utils.using_test_sp(sp):
-            self.browser.get(f'{self.sp_url(sp)}/shib{self.test_env}mfa')
-            password = secrets.test_accounts.password
-            self.browser.send_inputs(netid3, password)
-            self.browser.click(Locators.submit_button)
-            self.browser.wait_for_tag('p', 'Use your 2FA device.')
-            self.browser.switch_to.frame(self.browser.find_element_by_id('duo_iframe'))
-            self.browser.execute_script("document.getElementById('passcode').click()")
-            passcode = secrets.test_accounts.duo_code
-            self.browser.execute_script("document.getElementsByClassName('passcode-input')[0].value=arguments[0]", passcode)
-            self.browser.snap()
-            self.browser.execute_script("document.getElementById('passcode').click()")
-            self.browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
+            self.browser.get(self.sp_shib_url(sp, append='mfa'))
+            log_in_netid(self.browser, netid3, assert_success=False)
+            enter_duo_passcode(self.browser, match_service_provider=sp)
 
     def test_2fa_existing_session(self):
         """
         2FA-3 SSO to new 2FA app with an existing 2FA session
         """
-        # diafine12 sptest03
         sp = ServiceProviderInstance.diafine12
         with self.utils.using_test_sp(sp):
-            self.new_tab()
-            self.browser.get(f'{self.sp_url(sp)}/shib{self.test_env}mfa')
-            self.browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
+            with self.browser.tab_context():
+                self.browser.get(self.sp_shib_url(sp, append='mfa'))
+                self.browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
 
 
+@pytest.mark.usefixtures('fresh_class_browser')
 class TestNew2FASessionAndForcedReAuth:
     """
     The two tests are grouped here only because they need to share the same browser instance.
     """
-    @pytest.fixture(autouse=True)
-    def initialize(self, class_browser, utils, sp_url, sp_domain, new_tab, secrets, netid3, test_env):
-        self.browser = class_browser
-        self.utils = utils
-        self.sp_url = sp_url
-        self.sp_domain = sp_domain
-        self.new_tab = new_tab
-        self.netid3 = netid3
-        self.password = secrets.test_accounts.password
-        self.passcode = secrets.test_accounts.duo_code
-        self.test_env = test_env
+    browser: Chrome
 
-    def test_new_session_2fa_invalid_token_retry(self, secrets):
+    @pytest.fixture(autouse=True)
+    def initialize(self, utils, sp_shib_url, sp_domain, secrets, netid3, test_env, enter_duo_passcode):
+        self.utils = utils
+        self.sp_shib_url = sp_shib_url
+        self.sp_domain = sp_domain
+        self.netid = netid3
+        self.password = secrets.test_accounts.password.get_secret_value()
+        self.test_env = test_env
+        self.enter_duo_passcode = enter_duo_passcode
+
+    def test_new_session_2fa_invalid_token_retry(self, log_in_netid):
         """
         2FA-4 New session, 2FA sign-in with invalid token and retry
         """
-        # provide an invalid token number.
-        # provide the correct token number.
-        sp = ServiceProviderInstance.diafine6
-        self.browser.get(f'{self.sp_url(sp)}/shib{self.test_env}mfa')
-        self.browser.wait_for_tag('p', 'Please sign in')
-        self.browser.send_inputs(self.netid3, self.password)
-        self.browser.click(Locators.submit_button)
-        self.browser.wait_for_tag('p', 'Use your 2FA device.')
-        self.browser.implicitly_wait(10)
-        self.browser.switch_to.frame(self.browser.find_element_by_id('duo_iframe'))
-        self.browser.execute_script("document.getElementById('passcode').click()")
         passcode = '0thisisbad0'
-        self.browser.execute_script("document.getElementsByClassName('passcode-input')[0].value=arguments[0]", passcode)
-        self.browser.snap()
-        self.browser.execute_script("document.getElementById('passcode').click()")
-        self.browser.wait_for_tag('span', 'Incorrect passcode. Enter a passcode from Duo Mobile.')
-        self.browser.execute_script("document.getElementById('passcode').click()")
-        self.browser.execute_script("document.getElementsByClassName('passcode-input')[0].value=arguments[0]", self.passcode)
-        self.browser.snap()
-        self.browser.execute_script("document.getElementById('passcode').click()")
-        self.browser.switch_to.default_content()
-        self.browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
+        sp = ServiceProviderInstance.diafine6
+        with self.utils.using_test_sp(sp):
+            self.browser.get(self.sp_shib_url(sp, append='mfa'))
+            log_in_netid(self.browser, self.netid, assert_success=False)
+            self.enter_duo_passcode(self.browser,
+                                    passcode=passcode,
+                                    assert_failure=True)
+            self.enter_duo_passcode(self.browser,
+                                    select_iframe=False,
+                                    match_service_provider=sp,
+                                    assert_success=True)
 
     def test_forced_reauth_2fa(self):
         """2 FA-5 SSO to new forced reauth 2FA SP with an existing 2FA session"""
-        # diafine12, sptest03
         sp = ServiceProviderInstance.diafine12
-        self.browser.get(f'{self.sp_url(sp)}/shib{self.test_env}mfaforce')
-        self.browser.send_inputs(self.netid3, self.password)
-        self.browser.click(Locators.submit_button)
-        self.browser.wait_for_tag('p', 'Use your 2FA device.')
-        self.browser.implicitly_wait(10)
-        self.browser.switch_to.frame(self.browser.find_element_by_id('duo_iframe'))
-        self.browser.execute_script("document.getElementById('passcode').click()")
-        self.browser.execute_script("document.getElementsByClassName('passcode-input')[0].value=arguments[0]",
-                                    self.passcode)
-        self.browser.snap()
-        self.browser.execute_script("document.getElementById('passcode').click()")
-        self.browser.switch_to.default_content()
-        self.browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
+        with self.utils.using_test_sp(sp):
+            self.browser.get(self.sp_shib_url(sp, append='mfaforce'))
+            self.browser.send_inputs(self.netid, self.password)
+            self.browser.click(Locators.submit_button)
+            self.enter_duo_passcode(self.browser, match_service_provider=sp)
 
 
-def test_2fa_user_opt_in(utils, sp_url, sp_domain, secrets, netid4, test_env):
+def test_2fa_user_opt_in(utils, sp_shib_url, sp_domain, secrets, netid4, test_env, fresh_browser, enter_duo_passcode):
     """2FA-6 User opt-in"""
-    fresh_browser = Chrome()
     sp = ServiceProviderInstance.diafine6
+    password = secrets.test_accounts.password.get_secret_value()
     with utils.using_test_sp(sp):
-        fresh_browser.get(f'{sp_url(sp)}/shib{test_env}')
-        password = secrets.test_accounts.password
+        fresh_browser.get(sp_shib_url(sp))
         fresh_browser.send_inputs(netid4, password)
         fresh_browser.click(Locators.submit_button)
-        fresh_browser.wait_for_tag('p', 'Use your 2FA device.')
-        fresh_browser.switch_to.frame(fresh_browser.find_element_by_id('duo_iframe'))
-        fresh_browser.execute_script("document.getElementById('passcode').click()")
-        passcode = secrets.test_accounts.duo_code
-        fresh_browser.execute_script("document.getElementsByClassName('passcode-input')[0].value=arguments[0]", passcode)
-        fresh_browser.snap()
-        fresh_browser.execute_script("document.getElementById('passcode').click()")
-        fresh_browser.wait_for_tag('h2', f'{sp_domain(sp)} sign-in success!')
+        enter_duo_passcode(fresh_browser, match_service_provider=sp)
 
 
-def test_exception_to_user_opt_in(utils, sp_url, sp_domain, secrets, netid5, test_env):
+def test_exception_to_user_opt_in(utils, sp_shib_url, sp_domain, secrets, netid5, test_env, fresh_browser):
     """
     2 FA-7 Exception to user opt-in (opt-out). Opt-out overrides opt-in
     """
-    # diafine6, sptest05
-    fresh_browser = Chrome()
     sp = ServiceProviderInstance.diafine6
+    password = secrets.test_accounts.password.get_secret_value()
     with utils.using_test_sp(sp):
-        fresh_browser.get(f'{sp_url(sp)}/shib{test_env}')
-        password = secrets.test_accounts.password
+        fresh_browser.get(sp_shib_url(sp))
         fresh_browser.send_inputs(netid5, password)
         fresh_browser.click(Locators.submit_button)
         fresh_browser.wait_for_tag('h2', f'{sp_domain(sp)} sign-in success!')
-        fresh_browser.close()
 
 
 class Test2FASessionCRNs:
     """
     The two tests are grouped here as they excersise CRNs.
     """
+    browser: Chrome
+
     @pytest.fixture(autouse=True)
-    def initialize(self, class_browser, utils, sp_url, sp_domain, secrets, test_env):
-        self.browser = class_browser
+    def initialize(self, utils, sp_shib_url, sp_domain, secrets, test_env, fresh_browser):
+        self.browser = fresh_browser
         self.utils = utils
-        self.sp_url = sp_url
         self.sp_domain = sp_domain
-        self.password = secrets.test_accounts.password
-        self.passcode = secrets.test_accounts.duo_code
+        self.password = secrets.test_accounts.password.get_secret_value()
         self.test_env = test_env
         self.sp = ServiceProviderInstance.diafine6
+        self.shib_mfa_url = sp_shib_url(self.sp, append='mfa')
 
-    def test_2fa_session_single_crn(self, netid2):
+    def test_2fa_session_single_crn(self, netid2, enter_duo_passcode):
         """
         2FA-8 part a. 2FA session using an acct with a Single CRN.
         """
-        # diafine6, sptest02
         # For primary authn, use sptest02 (no 2FA account but with a CRN list of sptest03).
-        fresh_browser = Chrome()
         with self.utils.using_test_sp(self.sp):
-            fresh_browser.get(f'{self.sp_url(self.sp)}/shib{self.test_env}mfa')
-            fresh_browser.send_inputs(netid2, self.password)
-            fresh_browser.click(Locators.submit_button)
-            fresh_browser.wait_for_tag('p', 'Use your 2FA device.')
-            fresh_browser.wait_for_tag('p', "Using your 'sptest03' Duo identity.")
+            self.browser.get(self.shib_mfa_url)
+            self.browser.send_inputs(netid2, self.password)
+            self.browser.click(Locators.submit_button)
+            self.browser.wait_for_tag('p', "Using your 'sptest03' Duo identity.")
+            enter_duo_passcode(self.browser, match_service_provider=self.sp)
 
-            fresh_browser.switch_to.frame(fresh_browser.find_element_by_id('duo_iframe'))
-            fresh_browser.execute_script("document.getElementById('passcode').click()")
-            fresh_browser.execute_script("document.getElementsByClassName('passcode-input')[0].value=arguments[0]", self.passcode)
-            fresh_browser.snap()
-            fresh_browser.execute_script("document.getElementById('passcode').click()")
-            fresh_browser.wait_for_tag('h2', f'{self.sp_domain(self.sp)} sign-in success!')
-            fresh_browser.close()
-
-    def test_2fa_session_multiple_crn(self, netid10):
+    def test_2fa_session_multiple_crn(self, netid10, enter_duo_passcode):
         """
         2FA-8 part b. 2FA session using an acct with multiple CRNs.
         """
         # b. For primary authn, use sptest10 (no 2FA account but with a CRN list of sptest03, sptest07).
-        fresh_browser = Chrome()
         with self.utils.using_test_sp(self.sp):
-            fresh_browser.get(f'{self.sp_url(self.sp)}/shib{self.test_env}mfa')
-            fresh_browser.send_inputs(netid10, self.password)
-            fresh_browser.click(Locators.submit_button)
-            fresh_browser.wait_for_tag('div', 'Select a UW NetID for 2nd factor authentication.')
-            fresh_browser.find_element_by_xpath("//input[@value='sptest07']").click()
-            fresh_browser.snap()
-            fresh_browser.click(Locators.submit_button)
-            fresh_browser.wait_for_tag('p', 'Use your 2FA device.')
-            fresh_browser.wait_for_tag('p', "Using your 'sptest07' Duo identity.")
-
-            fresh_browser.switch_to.frame(fresh_browser.find_element_by_id('duo_iframe'))
-            fresh_browser.execute_script("document.getElementById('passcode').click()")
-            fresh_browser.execute_script("document.getElementsByClassName('passcode-input')[0].value=arguments[0]", self.passcode)
-            fresh_browser.snap()
-            fresh_browser.execute_script("document.getElementById('passcode').click()")
-            fresh_browser.wait_for_tag('h2', f'{self.sp_domain(self.sp)} sign-in success!')
-            fresh_browser.close()
+            self.browser.get(self.shib_mfa_url)
+            self.browser.send_inputs(netid10, self.password)
+            self.browser.click(Locators.submit_button)
+            self.browser.wait_for_tag('div', 'Select a UW NetID for 2nd factor authentication.')
+            self.browser.find_element_by_xpath("//input[@value='sptest07']").click()
+            self.browser.snap()
+            self.browser.click(Locators.submit_button)
+            self.browser.wait_for_tag('p', "Using your 'sptest07' Duo identity.")
+            enter_duo_passcode(self.browser, match_service_provider=self.sp)
 
 
-def test_remember_me_cookie(utils, sp_url, sp_domain, secrets, netid3, test_env):
+def test_remember_me_cookie(
+        utils, sp_shib_url, sp_url, log_in_netid,
+        sp_domain, secrets, netid3, test_env, fresh_browser, enter_duo_passcode):
     """
     2FA-9 Remember me cookie
     """
-    # chrome_options = webdriver.ChromeOptions()
-    # chrome_options.add_experimental_option("prefs", {"profile.default_content_settings.cookies": 1})
-    # fresh_browser = Chrome(options=chrome_options)
-    fresh_browser = Chrome()
+    fresh_browser
+    password = secrets.test_accounts.password.get_secret_value()
+
+    idp_env = '-eval' if test_env == 'eval' else ''
+    idp_url = f'https://idp{idp_env}.u.washington.edu/idp'
 
     sp = ServiceProviderInstance.diafine6
     with utils.using_test_sp(sp):
-        idpenv = ''
-        if test_env == "eval":
-            idpenv = "-eval"
-        fresh_browser.get(f'{sp_url(sp)}/shib{test_env}mfa')
-        password = secrets.test_accounts.password
+        fresh_browser.get(sp_shib_url(sp, append='mfa'))
         fresh_browser.send_inputs(netid3, password)
         fresh_browser.click(Locators.submit_button)
         fresh_browser.wait_for_tag('p', 'Use your 2FA device.')
         fresh_browser.find_element_by_name('rememberme').click()
-        fresh_browser.switch_to.frame(fresh_browser.find_element_by_id('duo_iframe'))
-        fresh_browser.execute_script("document.getElementById('passcode').click()")
-        passcode = secrets.test_accounts.duo_code
-        fresh_browser.execute_script("document.getElementsByClassName('passcode-input')[0].value=arguments[0]", passcode)
-        fresh_browser.snap()
-        fresh_browser.execute_script("document.getElementById('passcode').click()")
-        fresh_browser.wait_for_tag('h2', f'{sp_domain(sp)} sign-in success!')
+        enter_duo_passcode(fresh_browser, match_service_provider=sp)
         # go to an idp site to retrieve the rememberme cookie
-        fresh_browser.get(f'https://idp{idpenv}.u.washington.edu/idp')
+        fresh_browser.get(idp_url)
         fresh_browser.wait_for_tag('h1', 'not found')
 
         # look for these cookies:
@@ -271,12 +212,7 @@ def test_remember_me_cookie(utils, sp_url, sp_domain, secrets, netid3, test_env)
         assert 'shib_idp_session_ss' in cookie_names
         assert 'uw-rememberme-sptest03' in cookie_names
 
-        # b Sign out of the IdP to clear the 2FA session
-        idpenv = ''
-        if test_env == "eval":
-            idpenv = "-eval"
-        fresh_browser.get(f'https://diafine6.sandbox.iam.s.uw.edu/Shibboleth.sso/Logout?return=https://idp{idpenv}.u'
-                          '.washington.edu/idp/profile/Logout')
+        fresh_browser.get(f'{sp_url(sp)}/Shibboleth.sso/Logout?return={idp_url}/profile/Logout')
         # After signing out of the IdP, the rememberme cookie should remain in the browser,
         # but shib_idp_session* cookies should be gone.
         fresh_browser.wait_for_tag('span', 'Your UW NetID sign-in session has ended.')
@@ -286,63 +222,41 @@ def test_remember_me_cookie(utils, sp_url, sp_domain, secrets, netid3, test_env)
         assert 'shib_idp_session_ss' not in cookie_names
         assert 'uw-rememberme-sptest03' in cookie_names
 
-        # c Navigate to the Eval "Token authn" link on (https://diafine12.sandbox.iam.s.uw.edu/shib{test_env}mfa)
-        sp = ServiceProviderInstance.diafine12
-        with utils.using_test_sp(sp):
-            fresh_browser.get(f'{sp_url(sp)}/shib{test_env}mfa')
-            password = secrets.test_accounts.password
-            fresh_browser.send_inputs(netid3, password)
-            fresh_browser.click(Locators.submit_button)
-            fresh_browser.wait_for_tag('h2', f'{sp_domain(sp)} sign-in success!')
-        fresh_browser.close()
+    sp = ServiceProviderInstance.diafine12
+    with utils.using_test_sp(sp):
+        fresh_browser.get(sp_shib_url(sp, append='mfa'))
+        log_in_netid(fresh_browser, netid3, match_service_provider=sp)
 
 
-def test_forget_me_self_service(utils, sp_url, sp_domain, secrets, netid3, test_env):
+def test_forget_me_self_service(utils, sp_url, sp_domain, secrets, netid3, test_env, enter_duo_passcode,
+                                fresh_browser, sp_shib_url):
     """
     2FA-11 Forget me (self-service)
     """
-    # diafine6, sptest03
+    idp_env = ''
+    if test_env == "eval":
+        idp_env = "-eval"
 
-    fresh_browser = Chrome()
+    browser = fresh_browser
+    cookie_name = 'uw-rememberme-sptest03'
+    password = secrets.test_accounts.password.get_secret_value()
+
     sp = ServiceProviderInstance.diafine6
     with utils.using_test_sp(sp):
-        idpenv = ''
-        if test_env == "eval":
-            idpenv = "-eval"
-        fresh_browser.get(f'{sp_url(sp)}/shib{test_env}mfa')
-        password = secrets.test_accounts.password
-        fresh_browser.send_inputs(netid3, password)
-        fresh_browser.click(Locators.submit_button)
-        fresh_browser.wait_for_tag('p', 'Use your 2FA device.')
-        fresh_browser.find_element_by_name('rememberme').click()
-        fresh_browser.switch_to.frame(fresh_browser.find_element_by_id('duo_iframe'))
-        fresh_browser.execute_script("document.getElementById('passcode').click()")
-        passcode = secrets.test_accounts.duo_code
-        fresh_browser.execute_script("document.getElementsByClassName('passcode-input')[0].value=arguments[0]",
-                                     passcode)
-        fresh_browser.snap()
-        fresh_browser.execute_script("document.getElementById('passcode').click()")
-        fresh_browser.wait_for_tag('h2', f'{sp_domain(sp)} sign-in success!')
+        browser.get(sp_shib_url(sp, append='mfa'))
+        browser.send_inputs(netid3, password)
+        browser.click(Locators.submit_button)
+        browser.wait_for_tag('p', 'Use your 2FA device.')
+        browser.find_element_by_name('rememberme').click()
+        enter_duo_passcode(browser, match_service_provider=sp)
         # go to an idp site to retrieve the rememberme cookie
-        fresh_browser.get(f'https://idp{idpenv}.u.washington.edu/idp')
-        fresh_browser.wait_for_tag('h1', 'not found')
-        # look for this cookie:
-        # uw-rememberme-sptest03
-        cookie_list = fresh_browser.get_cookies()
-        wanted_cookie_name = 'uw-rememberme-sptest03'
+        browser.get(f'https://idp{idp_env}.u.washington.edu/idp')
+        browser.wait_for_tag('h1', 'not found')
 
-        found_cookie = False
-        cookie_removed = True
-        for cookie in cookie_list:
-            if wanted_cookie_name in cookie.values():
-                found_cookie = True
+        cookies_names = list(c['name'] for c in browser.get_cookies())
+        assert cookie_name in cookies_names
 
-        if found_cookie:
-            fresh_browser.get(f'https://idp{idpenv}.u.washington.edu/forgetme')
-            fresh_browser.wait_for_tag('p', 'setting has been removed from this browser.')
-            cookie_list = fresh_browser.get_cookies()
-            for cookie in cookie_list:
-                if wanted_cookie_name in cookie.values():
-                    cookie_removed = False
-
-        assert (found_cookie is True and cookie_removed is True)
+        browser.get(f'https://idp{idp_env}.u.washington.edu/forgetme')
+        browser.wait_for_tag('p', 'setting has been removed from this browser.')
+        cookies_names = list(c['name'] for c in browser.get_cookies())
+        assert cookie_name not in cookies_names
