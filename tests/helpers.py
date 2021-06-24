@@ -38,6 +38,8 @@ class Locators:
     """
     submit_button = Locator(search_method=SearchMethod.ID, search_value='submit_button')
     logout_button = Locator(search_method=SearchMethod.CSS_SELECTOR, search_value='input[value="Logout"]')
+    iframe = Locator(search_method=SearchMethod.ID, search_value='duo_iframe')
+    passcode_button = Locator(search_method=SearchMethod.ID, search_value='passcode')
 
 
 def lookup_domain_ip(domain: str):
