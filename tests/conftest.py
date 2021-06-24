@@ -1,15 +1,14 @@
-import os
-from typing import Callable
+import copy
+import logging
+from typing import Callable, Optional
+
 import inflection
-
 import pytest
-from tests.helpers import Locators
+from webdriver_recorder.browser import BrowserRecorder, Chrome, Remote
 
-
+from tests.helpers import Locators, WebTestUtils, load_settings
+from tests.models import AccountNetid, ServiceProviderInstance, TestOptions, TestSecrets, WebTestSettings
 from tests.secret_manager import SecretManager
-from tests.helpers import WebTestUtils, load_settings, CTRL_KEY
-from tests.models import WebTestSettings, TestOptions, ServiceProviderInstance, TestSecrets, AccountNetid
-from webdriver_recorder.browser import Chrome
 
 
 def pytest_addoption(parser):
@@ -55,37 +54,61 @@ def utils(settings: WebTestSettings, secrets: TestSecrets) -> WebTestUtils:
 @pytest.fixture(scope='session', autouse=True)
 def manage_test_service_providers(settings, utils):
     if not settings.test_options.skip_test_service_provider_start:
+        logging.info("Starting all test service provider instances.")
         utils.sp_aws_operations.start_instances()
         utils.sp_aws_operations.update_instance_a_records()
         utils.sp_aws_operations.wait_for_ip_propagation()
-    yield
-    if not settings.test_options.skip_test_service_provider_stop:
-        utils.sp_aws_operations.stop_instances()
-
+    else:
+        logging.info("Service provider instances will be started as-needed.")
+    try:
+        yield
+    finally:
+        if not settings.test_options.skip_test_service_provider_stop:
+            logging.info("Stopping all test service provider instances.")
+            utils.sp_aws_operations.stop_instances()
+        else:
+            logging.info("Leaving all active test service provider instances running.")
 
 @pytest.fixture(autouse=True)
 def report_test(report_test):
     """Re-wraps with autouse=True so that reports are always generated."""
     return report_test
 
-
-@pytest.fixture
+@pytest.fixture(scope='session')
 def sp_url(utils) -> Callable[[ServiceProviderInstance], str]:
     """Convenience fixture to make this less unwieldy to include in f-strings."""
     return utils.service_provider_url
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def sp_domain(utils) -> Callable[[ServiceProviderInstance], str]:
     return utils.service_provider_domain
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
+def sp_shib_url(test_env, sp_url):
+    """
+    fixture function that returns the provided SP's shibboleth URL.
+    Requires the service_provider parameter.
+
+    Accepts an optional parameter, 'append', which you can set to append
+    any string such as 'force', 'mfa', etc.
+    """
+
+    def inner(service_provider: ServiceProviderInstance, append: str = ''):
+        url = sp_url(service_provider)
+        url += f'/shib{test_env}{append}'
+        return url
+
+    return inner
+
+
+@pytest.fixture(scope='session')
 def secret_manager(settings):
     return SecretManager(settings.secret_manager)
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def secrets(secret_manager) -> TestSecrets:
     return secret_manager.get_secret_data(model_type=TestSecrets)
 
