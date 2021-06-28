@@ -3,14 +3,6 @@ from webdriver_recorder.browser import Chrome
 from tests.models import ServiceProviderInstance
 
 
-def test_me(my_fixture):
-    result1 = my_fixture(2, 3)
-    assert result1 == 6
-
-    result2 = my_fixture(4, 5)
-    assert result2 == 20
-
-
 class TestAuto2fa:
     @pytest.fixture(autouse=True)
     def initialize(self, utils, secrets, sp_url, test_env, sp_domain, two_fa_submit_form, login_submit_form):
@@ -25,9 +17,8 @@ class TestAuto2fa:
 
     def test_auto_2fa_a(self, netid3):
         """
-        AC-1 Part A
+        AC-1 Part A. Prompted for pwd then 2FA on diafine7.
         """
-        # Prompted for pwd then 2FA on diafine7.
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine7
         with self.utils.using_test_sp(sp):
@@ -40,9 +31,8 @@ class TestAuto2fa:
 
     def test_auto_2fa_b(self, netid3):
         """
-        AC-1 Part B
+        AC-1 Part B. Prompted for 2FA only on diafine7.
         """
-        # b. Prompted for 2FA only on diafine7.
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine6
         with self.utils.using_test_sp(sp):
@@ -58,9 +48,9 @@ class TestAuto2fa:
 
     def test_auto_2fa_c(self, netid3):
         """
-        AC-1 Part C
+        AC-1 Part C. Prompted for pwd then 2FA on diafine7.
         """
-        # Prompted for pwd then 2FA on diafine7.
+        #
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine6
         with self.utils.using_test_sp(sp):
@@ -78,9 +68,8 @@ class TestAuto2fa:
 
     def test_auto_2fa_d(self, netid3):
         """
-        AC-1 Part D
+        AC-1 Part D. No prompts on diafine7.
         """
-        # d. No prompts on diafine7.
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine6
         with self.utils.using_test_sp(sp):
@@ -97,9 +86,8 @@ class TestAuto2fa:
 
     def test_auto_2fa_e(self, netid3):
         """
-        AC-1 Part E
+        AC-1 Part E. Prompted for pwd then 2FA on diafine7.
         """
-        # Prompted for pwd then 2FA on diafine7.
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine6
         with self.utils.using_test_sp(sp):
@@ -118,11 +106,8 @@ class TestAuto2fa:
 
     def test_auto_2fa_f(self, netid3):
         """
-        AC-1 Part F
+        AC-1 Part F. Prompted for pwd then 2FA on diafine7 (no 500 error).
         """
-        # f. Start new 2FA session at https://diafine7.sandbox.iam.s.uw.edu/shibevalmfa.
-        # Close browser.
-        # Prompted for pwd then 2FA on diafine7 (no 500 error).
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine7
         with self.utils.using_test_sp(sp):

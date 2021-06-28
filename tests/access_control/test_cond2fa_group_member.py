@@ -86,7 +86,7 @@ class TestCond2faGroupMember:
 
     def test_e(self):
         """
-        Prompted for pwd then 2FA on diafine8.
+        e. Prompted for pwd then 2FA on diafine8.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine6
@@ -105,7 +105,7 @@ class TestCond2faGroupMember:
 
     def test_f(self):
         """
-        Prompted for pwd then 2FA on diafine8 (no 500 error).
+        f. Prompted for pwd then 2FA on diafine8 (no 500 error).
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine8
@@ -114,8 +114,3 @@ class TestCond2faGroupMember:
             self.login_submit_form(fresh_browser, self.netid6, self.password)
             self.two_fa_submit_form(fresh_browser)
             fresh_browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
-
-
-
-
-

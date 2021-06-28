@@ -3,12 +3,12 @@ from webdriver_recorder.browser import Chrome
 from tests.models import ServiceProviderInstance
 
 
-class TestCondAccessGroupMember:
+class TestCondAccessNonMember:
     @pytest.fixture(autouse=True)
-    def initialize(self, utils, secrets, sp_url, test_env, sp_domain, two_fa_submit_form, login_submit_form, netid7):
+    def initialize(self, utils, secrets, sp_url, test_env, sp_domain, two_fa_submit_form, login_submit_form, netid3):
         """
-        AC-3.1	Conditional access, tester is group member.
-        diafine9, sptest07
+        AC-3.2	Conditional access, tester is not group member.
+        diafine9, sptest03
         """
         self.utils = utils
         self.sp_url = sp_url
@@ -18,23 +18,24 @@ class TestCondAccessGroupMember:
         self.test_env = test_env
         self.two_fa_submit_form = two_fa_submit_form
         self.login_submit_form = login_submit_form
-        self.netid = netid7
+        self.netid = netid3
 
     def test_a(self):
         """
-        a. Prompted for pwd on diafine9.
+        a. Access error URL returned on diafine9.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine9
         with self.utils.using_test_sp(sp):
             fresh_browser.get(f'{self.sp_url(sp)}/shib{self.test_env}')
             self.login_submit_form(fresh_browser, self.netid, self.password)
-            fresh_browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
+            fresh_browser.set_window_size(500, 1000)
+            fresh_browser.wait_for_tag('p', 'You are not authorized to access the application:')
             fresh_browser.close()
 
     def test_b(self):
         """
-        b. No prompts on diafine9.
+        b. Access denied on diafine9. Access error URL returned.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine6
@@ -42,14 +43,17 @@ class TestCondAccessGroupMember:
             fresh_browser.get(f'{self.sp_url(sp)}/shib{self.test_env}')
             self.login_submit_form(fresh_browser, self.netid, self.password)
             fresh_browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
+
         sp = ServiceProviderInstance.diafine9
         with self.utils.using_test_sp(sp):
             fresh_browser.get(f'{self.sp_url(sp)}/shib{self.test_env}')
-            fresh_browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
+            fresh_browser.set_window_size(500, 1000)
+            fresh_browser.wait_for_tag('p', 'You are not authorized to access the application:')
+            fresh_browser.close()
 
     def test_c(self):
         """
-        c. Prompted for pwd on diafine9.
+        c. Prompted for pwd, then access denied on diafine9. Access error URL returned.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine6
@@ -57,16 +61,18 @@ class TestCondAccessGroupMember:
             fresh_browser.get(f'{self.sp_url(sp)}/shib{self.test_env}')
             self.login_submit_form(fresh_browser, self.netid, self.password)
             fresh_browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
+
         sp = ServiceProviderInstance.diafine9
         with self.utils.using_test_sp(sp):
             fresh_browser.get(f'{self.sp_url(sp)}/shib{self.test_env}force')
             self.login_submit_form(fresh_browser, self.netid, self.password)
-            fresh_browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
+            fresh_browser.set_window_size(500, 1000)
+            fresh_browser.wait_for_tag('p', 'You are not authorized to access the application:')
             fresh_browser.close()
 
     def test_d(self):
         """
-        d. No prompts on diafine9.
+        d. Access denied on diafine9. Access error URL returned.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine6
@@ -75,15 +81,17 @@ class TestCondAccessGroupMember:
             self.login_submit_form(fresh_browser, self.netid, self.password)
             self.two_fa_submit_form(fresh_browser)
             fresh_browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
+
         sp = ServiceProviderInstance.diafine9
         with self.utils.using_test_sp(sp):
             fresh_browser.get(f'{self.sp_url(sp)}/shib{self.test_env}mfa')
-            fresh_browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
+            fresh_browser.set_window_size(600, 1000)
+            fresh_browser.wait_for_tag('p', 'You are not authorized to access the application:')
             fresh_browser.close()
 
     def test_e(self):
         """
-        e. Prompted for pwd then 2FA on diafine9.
+        e. Prompted for pwd, then 2FA, then access denied on diafine9. Access error URL returned.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine6
@@ -92,9 +100,11 @@ class TestCondAccessGroupMember:
             self.login_submit_form(fresh_browser, self.netid, self.password)
             self.two_fa_submit_form(fresh_browser)
             fresh_browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
+
         sp = ServiceProviderInstance.diafine9
         with self.utils.using_test_sp(sp):
             fresh_browser.get(f'{self.sp_url(sp)}/shib{self.test_env}mfaforce')
             self.login_submit_form(fresh_browser, self.netid, self.password)
             self.two_fa_submit_form(fresh_browser)
-            fresh_browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
+            fresh_browser.wait_for_tag('p', 'You are not authorized to access the application:')
+            fresh_browser.close()

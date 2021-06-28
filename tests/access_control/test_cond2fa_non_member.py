@@ -22,7 +22,7 @@ class TestCond2faGroupMember:
 
     def test_a(self):
         """
-        Prompted for pwd only on diafine8
+        a. Prompted for pwd only on diafine8
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine8
@@ -34,7 +34,7 @@ class TestCond2faGroupMember:
 
     def test_b(self):
         """
-        No prompts on diafine8.
+        b. No prompts on diafine8.
         """
         fresh_browser = Chrome()
         sp = ServiceProviderInstance.diafine6

@@ -70,7 +70,23 @@ def test_attributes(browser, netid, utils, sp_url, sp_domain, secrets, test_env)
         content_clean = content.get_attribute('innerHTML')
         attribute_data = [item.strip() for item in content_clean.split("<br>")]
 
+        # eduPersonScopedAffiliation is a unique case
+        wanted_key = 'eduPersonScopedAffiliation'
+
+        result = next(filter(lambda x: x.startswith(wanted_key), attribute_data))
+        found_values = set(result.split("= ")[1].split(";"))
+
         for key, value in attributes_to_test.items():
-            # matches on exact string only. mail won't count as a match for uwEduEmail and uwEduEmail won't match mail
-            assert (f'{key} = {value}' in attribute_data)
+            if key == wanted_key:
+                assert found_values == {
+                    'employee@washington.edu',
+                    'student@washington.edu',
+                    'staff@washington.edu',
+                    'member@washington.edu',
+                }, f'Unexpected attributes found in comparison with: {found_values}'
+            else:
+                # matches on exact string only. mail won't count as a match for uwEduEmail and uwEduEmail won't match
+                # mail
+                assert f'{key} = {value}' in attribute_data
+
         fresh_browser.close()

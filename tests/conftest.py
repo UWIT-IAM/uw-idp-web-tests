@@ -126,8 +126,23 @@ def netid() -> str:
 
 
 @pytest.fixture
+def netid2() -> str:
+    return AccountNetid.sptest02.value
+
+
+@pytest.fixture
 def netid3() -> str:
     return AccountNetid.sptest03.value
+
+
+@pytest.fixture
+def netid4() -> str:
+    return AccountNetid.sptest04.value
+
+
+@pytest.fixture
+def netid5() -> str:
+    return AccountNetid.sptest05.value
 
 
 @pytest.fixture
@@ -144,17 +159,16 @@ def netid7() -> str:
 def netid8() -> str:
     return AccountNetid.sptest08.value
 
+
+@pytest.fixture
+def netid10() -> str:
+    return AccountNetid.sptest10.value
+
+
 @pytest.fixture
 def clean_browser(browser: Chrome) -> Chrome:
     browser.delete_all_cookies()
     return browser
-
-
-@pytest.fixture
-def my_fixture():
-    def _method(a, b):
-        return a*b
-    return _method
 
 
 @pytest.fixture

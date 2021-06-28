@@ -11,40 +11,6 @@ from tests.helpers import Locators
 from tests.models import ServiceProviderInstance, AccountNetid
 
 
-@pytest.fixture
-def netid() -> str:
-    return AccountNetid.sptest01.value
-
-
-@pytest.fixture
-def netid2() -> str:
-    return AccountNetid.sptest02.value
-
-
-@pytest.fixture
-def netid3() -> str:
-    return AccountNetid.sptest03.value
-
-
-@pytest.fixture
-def netid4() -> str:
-    return AccountNetid.sptest04.value
-
-
-@pytest.fixture
-def netid5() -> str:
-    return AccountNetid.sptest05.value
-
-
-@pytest.fixture
-def netid10() -> str:
-    return AccountNetid.sptest10.value
-
-
-def add_suffix(suffix: str, netid: str) -> str:
-    return f'{netid}{suffix}'
-
-
 def test_new_session_no_duo(utils, sp_url, sp_domain, secrets, netid, test_env):
     """
     2FA-1 New session, 2FA sign-in, user doesn't have a Duo account or a TAWS CRN.
@@ -329,12 +295,6 @@ def test_remember_me_cookie(utils, sp_url, sp_domain, secrets, netid3, test_env)
             fresh_browser.click(Locators.submit_button)
             fresh_browser.wait_for_tag('h2', f'{sp_domain(sp)} sign-in success!')
         fresh_browser.close()
-
-
-def test_forget_me_admin():
-    """
-    2FA-10 Forget me (admin) per Michael, this test is not yet ready to be automated.
-    """
 
 
 def test_forget_me_self_service(utils, sp_url, sp_domain, secrets, netid3, test_env):
