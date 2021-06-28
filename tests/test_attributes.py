@@ -72,18 +72,21 @@ def test_attributes(browser, netid, utils, sp_url, sp_domain, secrets, test_env)
 
         # eduPersonScopedAffiliation is a unique case
         wanted_key = 'eduPersonScopedAffiliation'
-        result = list(filter(lambda x: x.startswith(wanted_key), attribute_data))
-        found_values = result[0].split("= ", 1)[1].split(";")
+
+        result = next(filter(lambda x: x.startswith(wanted_key), attribute_data))
+        found_values = set(result.split("= ")[1].split(";"))
 
         for key, value in attributes_to_test.items():
-            # matches on exact string only. mail won't count as a match for uwEduEmail and uwEduEmail won't match mail
-            if key != 'eduPersonScopedAffiliation':
-                assert (f'{key} = {value}' in attribute_data)
-            # eduPersonScopedAffiliation values may not be in the same order every time.
-            elif key == 'eduPersonScopedAffiliation':
-                assert len(found_values) == 4
-                assert 'employee@washington.edu' in found_values
-                assert 'student@washington.edu' in found_values
-                assert 'staff@washington.edu' in found_values
-                assert 'member@washington.edu' in found_values
+            if key == wanted_key:
+                assert found_values == {
+                    'employee@washington.edu',
+                    'student@washington.edu',
+                    'staff@washington.edu',
+                    'member@washington.edu',
+                }, f'Unexpected attributes found in comparison with: {found_values}'
+            else:
+                # matches on exact string only. mail won't count as a match for uwEduEmail and uwEduEmail won't match
+                # mail
+                assert f'{key} = {value}' in attribute_data
+
         fresh_browser.close()

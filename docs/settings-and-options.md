@@ -21,7 +21,7 @@ toggled at the command line.
 
 The tests can be run against the production environment or the test/eval environment
 To run the tests against production use the command line argument `--env=prod`
-To run the tests against production use the command line argument `--env=eval`
+To run the tests against eval use the command line argument `--env=eval`
 If you do not use the `--env` flag, the tests will run against production as default.
 
 ## Switching profiles
