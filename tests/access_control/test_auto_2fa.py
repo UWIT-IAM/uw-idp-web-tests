@@ -27,8 +27,7 @@ class TestAuto2fa(AccessControlTestBase):
         sp = ServiceProviderInstance.diafine7
         with self.utils.using_test_sp(sp):
             self.browser.get(self.sp_shib_url(sp))
-            self.enter_duo_passcode(self.browser)
-            self.browser.wait_for_tag('h2', f'{self.sp_domain(sp)} sign-in success!')
+            self.enter_duo_passcode(self.browser, match_service_provider=sp)
 
     def test_auto_2fa_c(self, netid3):
         """

@@ -6,7 +6,6 @@ https://wiki.cac.washington.edu/display/SMW/IAM+Team+Wiki
 ATT-1 thru ATT-28.
 """
 
-from tests.helpers import Locators
 from tests.models import ServiceProviderInstance
 
 
@@ -64,7 +63,19 @@ def test_attributes(browser, netid, utils, sp_shib_url, sp_domain, test_env, log
         content = browser.wait_for_tag('pre', 'cn')
         content_clean = content.get_attribute('innerHTML')
         attribute_data = [item.strip() for item in content_clean.split("<br>")]
+        wanted_key = 'eduPersonScopedAffiliation'
+        result = next(filter(lambda x: x.startswith(wanted_key), attribute_data))
+        found_values = set(result.split("= ")[1].split(";"))
 
         for key, value in attributes_to_test.items():
-            # matches on exact string only. mail won't count as a match for uwEduEmail and uwEduEmail won't match mail
-            assert (f'{key} = {value}' in attribute_data)
+            if key == wanted_key:
+                assert found_values == {
+                    'employee@washington.edu',
+                    'student@washington.edu',
+                    'staff@washington.edu',
+                    'member@washington.edu',
+                }, f'Unexpected attributes found in comparison with: {found_values}'
+            else:
+                # matches on exact string only. mail won't count as a match for uwEduEmail and uwEduEmail won't match
+                # mail
+                assert f'{key} = {value}' in attribute_data

@@ -258,12 +258,10 @@ def log_in_netid(secrets: TestSecrets, sp_domain) -> Callable[..., NoReturn]:
 
 
 @pytest.fixture(scope='session')
-def get_fresh_browser(session_browser, selenium_server, chrome_options, request) -> Callable[..., BrowserRecorder]:
+def get_fresh_browser(selenium_server, chrome_options, request) -> Callable[..., BrowserRecorder]:
     """
-    This is a fixture function that creates a fresh browser instance of
-    the same type as the 'session_browser' (be it Chrome or Remote or
-    some other subclass). Simply call the fixture to use create a properly
-    configured browser:
+    This is a fixture function that creates a fresh browser instance
+    based on the current environment configuration.
 
         def test_the_thing(get_fresh_browser: Callable[None, BrowserRecorder]):
             browser = get_fresh_browser()
@@ -281,13 +279,12 @@ def get_fresh_browser(session_browser, selenium_server, chrome_options, request)
     """
     options = copy.deepcopy(chrome_options)
     options.add_experimental_option('detach', True)  # See docstring above
-    browser_cls = session_browser.__class__
     args = dict(options=options)
-
-    if isinstance(session_browser, Remote):
-        # Connect to the existing remote server.
+    if selenium_server and selenium_server.strip():
+        browser_cls = Remote
         args['command_executor'] = f'http://{selenium_server}/wd/hub'
     else:
+        browser_cls = Chrome
         # Reuse a single local instance for the duration of the tests.
         args['port'] = request.config.getoption('--reuse-chromedriver')
 

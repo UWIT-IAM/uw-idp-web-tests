@@ -11,11 +11,6 @@ from tests.models import ServiceProviderInstance
 import pytest
 
 
-
-def add_suffix(suffix: str, netid: str) -> str:
-    return f'{netid}{suffix}'
-
-
 def test_new_session_no_duo(utils, sp_url, sp_domain, secrets, netid, test_env, fresh_browser, sp_shib_url):
     """
     2FA-1 New session, 2FA sign-in, user doesn't have a Duo account or a TAWS CRN.
@@ -47,8 +42,6 @@ class TestNew2FASessionAndExisting2FASession:
         """
         2FA-2 New session, 2FA sign-in
         """
-
-        password = secrets.test_accounts.password.get_secret_value()
 
         sp = ServiceProviderInstance.diafine6
         with self.utils.using_test_sp(sp):
@@ -186,7 +179,6 @@ def test_remember_me_cookie(
     """
     2FA-9 Remember me cookie
     """
-    fresh_browser
     password = secrets.test_accounts.password.get_secret_value()
 
     idp_env = '-eval' if test_env == 'eval' else ''
