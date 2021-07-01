@@ -2,7 +2,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import List, Dict, Optional, Any
 
-from pydantic import BaseModel, Field, Extra, BaseSettings, validator
+from pydantic import BaseModel, Field, Extra, BaseSettings, SecretStr, validator
 import inflection
 
 
@@ -89,12 +89,12 @@ class SecretManagerSettings(BaseModel):
 
 
 class TestAccountSecrets(BaseModel):
-    password: str
-    duo_code: str = Field(..., alias='duoCode')
+    password: SecretStr
+    duo_code: SecretStr = Field(..., alias='duoCode')
 
 
 class TestSecrets(BaseModel):
-    env: Dict[str, str]
+    env: Dict[str, SecretStr]
     test_accounts: TestAccountSecrets = Field(..., alias='testAccounts')
 
 
@@ -109,6 +109,16 @@ class TestOptions(BaseSettings):
     local_secrets_filename: Optional[str] = Field(
         None, description="If provided along with --use-local-secrets, "
                           "will use this file for secrets instead of retrieving them from GCP")
+    report_title: Optional[str] = Field(
+        'UW IdP Web Tests',
+        add_cli_arg=False,
+        description='The title of the report artifact.',
+    )
+    selenium_server: Optional[str] = Field(
+        None,
+        add_cli_arg=False,
+        description='If provided will use a Remote instance connection to the server.'
+    )
 
     @classmethod
     def parse_overrides(cls, test_config):

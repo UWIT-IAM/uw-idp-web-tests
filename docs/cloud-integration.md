@@ -64,12 +64,16 @@ It is recommended to export this key as part of your terminal activation. Users 
 personal terminal setup and preferences.
  
  
- ### AWS
+### AWS
+
+**This is not required** - There are shared access keys used by default that are 
+accessed at runtime using your Google credentials (above). Only do this if you
+know you have a new use case!
  
- For programmatic access to AWS, you need to first log in to the AWS console using the link in the first 
- section of this document.
- 
- If offered the option on sign in, choose "sandbox-iamteam."
+For programmatic access to AWS, you need to first log in to the AWS console using the link in the first 
+section of this document.
+
+If offered the option on sign in, choose "sandbox-iamteam."
  
  1. Click on "Services"
  1. Search for "IAM", and click on the entry.
@@ -88,6 +92,10 @@ personal terminal setup and preferences.
    - **Make very sure you have pasted the secret access key; you won't be able to see it again.**
  1. Click "Close"
  
-These should be exported as environment variables with the following names: `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
-You may also consider installing the AWS cli (`pip install awscli`) and running `aws config`, and pasting the entries there. 
+These should be exported as environment variables with the following names: 
+`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
+
+You may also consider installing the AWS cli 
+(`pip install awscli`), running `aws config`, and pasting the entries there. 
+
 Either option will work for Boto3, which creates AWS clients.

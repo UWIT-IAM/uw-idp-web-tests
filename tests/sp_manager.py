@@ -1,10 +1,11 @@
 from typing import Optional, List
 
 import click
-from .models import ServiceProviderInstance, WebTestSettings
+
+from tests.secret_manager import SecretManager
+from .models import ServiceProviderInstance, TestSecrets
 from .helpers import ServiceProviderAWSOperations, load_settings, WebTestUtils
 import logging
-import os
 
 logging.basicConfig(format="%(asctime)s: %(message)s")
 
@@ -41,10 +42,14 @@ def cli(ctx):
 @add_options(common_options)
 def start(service_providers, settings_file, settings_env, dry_run):
     settings = load_settings(settings_file, settings_env)
+    secrets = SecretManager(settings.secret_manager).get_secret_data(TestSecrets)
     if dry_run:
         print_dry_run_disclaimer()
-    utils = WebTestUtils(settings)
-    op = ServiceProviderAWSOperations(settings.service_providers, settings.aws_hosted_zone, utils)
+    utils = WebTestUtils(settings, secrets)
+    op = ServiceProviderAWSOperations(secrets,
+                                      settings.service_provider_instance_filters,
+                                      settings.aws_hosted_zone,
+                                      utils)
     op.start_instances(*service_providers, dry_run=dry_run)
     op.update_instance_a_records(*service_providers, dry_run=dry_run)
     op.wait_for_ip_propagation(*service_providers, dry_run=dry_run)
@@ -54,10 +59,14 @@ def start(service_providers, settings_file, settings_env, dry_run):
 @add_options(common_options)
 def stop(service_providers, settings_file, settings_env, dry_run):
     settings = load_settings(settings_file, settings_env)
+    secrets = SecretManager(settings.secret_manager).get_secret_data(TestSecrets)
     if dry_run:
         print_dry_run_disclaimer()
-    utils = WebTestUtils(settings)
-    op = ServiceProviderAWSOperations(settings.service_providers, settings.aws_hosted_zone, utils)
+    utils = WebTestUtils(settings, secrets)
+    op = ServiceProviderAWSOperations(secrets,
+                                      settings.service_provider_instance_filters,
+                                      settings.aws_hosted_zone,
+                                      utils)
     op.stop_instances(*service_providers, dry_run=dry_run)
 
 

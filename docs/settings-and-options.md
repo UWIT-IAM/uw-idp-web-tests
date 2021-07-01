@@ -141,7 +141,3 @@ class SecretManagerSettings(BaseSettings):
 ```
 
 Yes, `...` is actual code, and is not just a placeholder for you to figure out on your own.
-
-
-
-

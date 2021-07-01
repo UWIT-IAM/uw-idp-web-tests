@@ -6,23 +6,19 @@ https://wiki.cac.washington.edu/display/SMW/IAM+Team+Wiki
 ATT-1 thru ATT-28.
 """
 
-from webdriver_recorder.browser import Chrome
-from tests.helpers import Locators
 from tests.models import ServiceProviderInstance
 
 
-def test_attributes(browser, netid, utils, sp_url, sp_domain, secrets, test_env):
+def test_attributes(browser, netid, utils, sp_shib_url, sp_domain, test_env, log_in_netid):
     """
     Attribute release. SAML Tracer or similar can also be used to inspect these attribute values
     ATT-1 thru ATT-28
     """
-    fresh_browser = Chrome()
     login = netid
-    password = secrets.test_accounts.password
     sp = ServiceProviderInstance.diafine6
-    idpenv = ''
+    idp_env = ''
     if test_env == "eval":
-        idpenv = ":eval"
+        idp_env = ":eval"
 
     attributes_to_test = {
         'cn': 'Lucy Mary Cartier',
@@ -32,7 +28,7 @@ def test_attributes(browser, netid, utils, sp_url, sp_domain, secrets, test_env)
         'eduPersonEntitlement': 'urn:mace:dir:entitlement:common-lib-terms;urn:mace:incommon:entitlement:common:1',
         'eduPersonPrincipleName': 'sptest01@washington.edu',
         'eduPersonScopedAffiliation': 'employee@washington.edu;student@washington.edu;staff@washington.edu;member@washington.edu',
-        'eduPersonTargetedID': f'urn:mace:incommon:washington.edu{idpenv}!https://diafine6.sandbox.iam.s.uw.edu'
+        'eduPersonTargetedID': f'urn:mace:incommon:washington.edu{idp_env}!https://diafine6.sandbox.iam.s.uw.edu'
                                f'/shibboleth!22d186bb38a02d3ef949f9555156947f',
         'employeeNumber': '000211350',
         'givenName': 'Lucy Mary',
@@ -57,22 +53,17 @@ def test_attributes(browser, netid, utils, sp_url, sp_domain, secrets, test_env)
     }
 
     with utils.using_test_sp(sp):
-        fresh_browser.set_window_size(1024, 768)
+        browser.set_window_size(1024, 768)
         # go to url to check saml properties
         # https://diafine6.sandbox.iam.s.uw.edu/shib{test_env}/server-vars.aspx
-        fresh_browser.get(f'{sp_url(sp)}/shib{test_env}')
-        fresh_browser.send_inputs(login, password)
-        fresh_browser.click(Locators.submit_button)
-        fresh_browser.wait_for_tag('h2', f'{sp_domain(sp)} sign-in success!')
-        fresh_browser.get(f'{sp_url(sp)}/shib{test_env}/server-vars.aspx')
-        fresh_browser.wait_for_tag('pre', 'cn')
-        content = fresh_browser.find_element_by_tag_name('pre')
+        url = sp_shib_url(sp)
+        browser.get(url)
+        log_in_netid(browser, login)
+        browser.get(f'{url}/server-vars.aspx')
+        content = browser.wait_for_tag('pre', 'cn')
         content_clean = content.get_attribute('innerHTML')
         attribute_data = [item.strip() for item in content_clean.split("<br>")]
-
-        # eduPersonScopedAffiliation is a unique case
         wanted_key = 'eduPersonScopedAffiliation'
-
         result = next(filter(lambda x: x.startswith(wanted_key), attribute_data))
         found_values = set(result.split("= ")[1].split(";"))
 
@@ -88,5 +79,3 @@ def test_attributes(browser, netid, utils, sp_url, sp_domain, secrets, test_env)
                 # matches on exact string only. mail won't count as a match for uwEduEmail and uwEduEmail won't match
                 # mail
                 assert f'{key} = {value}' in attribute_data
-
-        fresh_browser.close()
