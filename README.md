@@ -4,7 +4,14 @@ Contains a test suite for UW's identity provider, using mock Shibboleth service 
 
 Detailed information can be found in the [docs](docs) directory.
 
+## Quickstart
+
+- Follow the [bare minimum setup instructions](#bare-minimum)
+- Run `./scripts/run-tests.sh`
+
 # Dev Environment Setup
+
+## Bare Minimum 
 
 **If you are new to maintaining or running these tests, you must start here!**
 
@@ -12,9 +19,13 @@ Detailed information can be found in the [docs](docs) directory.
 [docs/cloud-integration](docs/cloud-integration.md#CreatingAServiceAccount) and ensure you are 
 exporting the `GOOGLE_APPLICATION_CREDENTIALS` environment variable.
 
-## For running locally (via python virtualenv)
+2\. [Install docker](https://docs.docker.com/get-docker/) on your machine, 
+    and make sure the docker daemon is running.
 
-If you want IDE integration and easier debugging, do this!
+## For running locally (via poetry)
+
+Only required if you need more than the docker functionality. 
+For instance, if you want IDE integration and easier debugging, do this!
 
 1\. [Install pyenv](https://github.com/pyenv/pyenv#installation) (if you haven't already)
 
@@ -71,6 +82,38 @@ for more information on configuring your test environment.
 
 Please keep in mind that the default options will take a few minutes to start due to cold start delays for our
 [test service providers](docs/test-service-providers.md).
+
+
+## Via docker
+
+```
+./scripts/run-tests.sh
+```
+
+You can pass additional arguments to pytest using the 
+special `--` and `+-` arguments, example:
+
+`--` will replace all default environment variables; `+-` will append to default 
+variables. (Use this if you want nice log output).
+
+**Example using `--`:**
+
+```
+./scripts/run-tests.sh -- --maxfail 1 tests/test_2fa_duo.py
+# ...
+# will output something like:
+ Running pytest with args: --maxfail 1 tests/test_2fa_duo.py
+```
+
+**Example using `+-`:**
+```
+./scripts/run-tests.sh +- --settings-profile in_development tests/test_attributes.py
+# ...
+# will output something like: 
+Running pytest with args: -o log_cli=true -o log_cli_level=info --settings-profile in_development tests/test_attributes.py
+```
+
+For more information, run `./scripts/run-tests.sh --help`
 
 
 ## Via virtualenv

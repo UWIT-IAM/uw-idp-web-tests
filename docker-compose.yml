@@ -1,0 +1,64 @@
+# To execute this docker-compose yml file use `docker-compose -f docker-compose-v3.yml up`
+# Add the `-d` flag at the end for detached execution
+# To stop the execution, hit Ctrl+C, and then `docker-compose -f docker-compose-v3.yml down`
+version: "3"
+services:
+  # This is the testing image built from the Dockerfile in this repository.
+  # This requires a `CREDENTIAL_DIRNAME` environment variable be set when you
+  # run the composition, if you run it directly. The value of that variable should
+  # be the location on the host's (i.e., your) machine that houses the
+  # file name built into the Docker image. If the full path to your credential key is
+  # "/etc/secrets/uwit-mci-iam-key.json," then the value here would be "/etc/secrets"
+  # This directory will be mounted onto the image, and the image will access the
+  # built-in filename. This prevents credentials from hanging out in images when
+  # they're not running.
+  #
+  # You can optionally configure the test configuration by setting a
+  # PYTEST_ARGS environment variable. This will override all arguments to python
+  # except for the "--report-dir," which is mounted to the host's working directory.
+  # For more information on useful arguments, see docs/pytest.md.
+  test-runner:
+    image: ghcr.io/uwit-iam/idp-web-tests:build
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /secrets/${CREDENTIAL_FILE_NAME}
+      AWS_DEFAULT_REGION: us-west-2
+      TZ: America/Los_Angeles
+      PYTEST_ARGS: ${PYTEST_ARGS}
+      UPLOAD_FILENAME: ${TEST_ARTIFACT_OBJECT_NAME}
+      REPORT_DIR: /tmp/webdriver-report
+      TARGET_IDP_HOST: ${TARGET_IDP_HOST}
+    depends_on:
+      - chrome
+      - selenium-hub
+    volumes:
+      - ${CREDENTIAL_MOUNT_POINT}:/secrets:ro
+      - ${REPORT_MOUNT_POINT}:/tmp/webdriver-report
+    command: >
+      bash -c "./set-idp-host.sh -t ${TARGET_IDP_HOST} &&
+      mkdir -pv ${REPORT_DIR} && rm -vf ${REPORT_DIR}/* &&
+      ./wait-for-selenium.sh &&
+      echo Running pytest with args: ${PYTEST_ARGS} &&
+      pytest ${PYTEST_ARGS}
+      "
+
+  # Originally sourced from vendor-provided documentation
+  # at: https://github.com/SeleniumHQ/docker-selenium/tree/selenium-3
+  selenium-hub:
+    image: selenium/hub:3.141.59-20210607
+    container_name: selenium-hub
+    ports:
+      - "4444:4444"
+    logging:
+      driver: 'none'
+
+  chrome:
+    image: selenium/node-chrome:3.141.59-20210607
+    volumes:
+      - /dev/shm:/dev/shm
+    depends_on:
+      - selenium-hub
+    environment:
+      - HUB_HOST=selenium-hub
+      - HUB_PORT=4444
+    logging:
+      driver: 'none'
