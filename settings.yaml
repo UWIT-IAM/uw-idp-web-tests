@@ -12,32 +12,27 @@ base: &base
   aws_hosted_zone:
     name: sandbox.iam.s.uw.edu
     id: ZTMZX8EZCH1AH
-    # This is not corroborated against any given endpoint; this is the AWS default, and is used here for a polling task
-    # Override this to extend the wait time for propagation if necessary; will not change the
-    # actual host record.
+    # This is not corroborated against any given endpoint;
+    # this is the AWS default, and is used here for a polling task
+    # Override this to extend the wait time for propagation if necessary;
+    # will not change the actual host record.
     ttl: 300
   secret_manager:
     project: uwit-mci-iam
     secret_name: idp-web-test-config
     version: latest
   test_options: &base_test_options
-    # These are toggleable options. You can override them in a yaml section for reuse, or you can override them
-    # from the command line by "dasherizing" the option name.
-    # e.g., skip_test_service_provider_start can be
-    #       overridden by doing `pytest --skip-test-service-provider-start`
     skip_test_service_provider_start: False
     skip_test_service_provider_stop: False
-    hosts_file: /etc/hosts
     use_local_secrets: false
-    local_secrets_filename: secrets.json
     report_title: UW IdP Web Tests
 
 
 docker_compose:
   <<: *base
-  test_options:
+  test_options: &compose_options
     <<: *base_test_options
-    selenium_server: selenium:4444
+    selenium_server: selenium-hub:4444
 
 
 # Run with --settings-profile in_development to
@@ -46,6 +41,7 @@ docker_compose:
 in_development:
   <<: *base
   test_options:
+    <<: *compose_options
     skip_test_service_provider_start: True
     skip_test_service_provider_stop: True
     env: eval

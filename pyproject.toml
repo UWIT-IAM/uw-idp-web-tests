@@ -16,7 +16,9 @@ pydantic = "^1.8.2"
 pytest = "^6.2.4"
 PyYAML = "^5.4.1"
 typing-extensions = "^3.10.0"
-uw-webdriver-recorder = ">=4.0.0,<4.1.0"
+# Pinned until https://github.com/UWIT-IAM/webdriver-recorder/pull/25
+# is merged and released.
+uw-webdriver-recorder = "4.0.1-alpha.1" # ">=4.0.0,<4.1.0"
 waiter = "^1.2"
 
 [tool.poetry.dev-dependencies]

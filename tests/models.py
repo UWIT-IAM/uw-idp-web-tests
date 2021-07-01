@@ -1,6 +1,6 @@
 from __future__ import annotations
 from enum import Enum
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, NoReturn, Optional, Any
 
 from pydantic import BaseModel, Field, Extra, BaseSettings, SecretStr, validator
 import inflection
@@ -98,12 +98,16 @@ class TestSecrets(BaseModel):
     test_accounts: TestAccountSecrets = Field(..., alias='testAccounts')
 
 
+class TestEnvironment(Enum):
+    prod = 'prod'
+    eval = 'eval'
+
+
 class TestOptions(BaseSettings):
     skip_test_service_provider_start: bool = Field(
         ..., description="If set to true, will only start test SPs if they are needed.")
     skip_test_service_provider_stop: bool = Field(
         ..., description="If set to true, will not shut down instances at the end of the test.")
-    hosts_file: str = Field(..., description="The location of the hosts file on this system.")
     use_local_secrets: bool = Field(
         False, description="If set to True will use local_secrets_filename instead of the default")
     local_secrets_filename: Optional[str] = Field(
@@ -119,10 +123,11 @@ class TestOptions(BaseSettings):
         add_cli_arg=False,
         description='If provided will use a Remote instance connection to the server.'
     )
+    env: TestEnvironment = TestEnvironment.prod
+    reuse_chromedriver: int = 4444
 
     @classmethod
     def parse_overrides(cls, test_config):
-        """"""
         kwargs = {}
         for field, f_config in cls.__fields__.items():
             option_name = f'--{inflection.dasherize(field)}'
@@ -130,6 +135,22 @@ class TestOptions(BaseSettings):
             if option_value is not None:
                 kwargs[field] = option_value
         return kwargs
+
+    @classmethod
+    def apply_to_parser(cls, parser) -> NoReturn:
+        for field, f_config in cls.__fields__.items():
+            option_name = f'--{inflection.dasherize(field)}'
+            help_text = f_config.field_info.description
+            if not f_config.field_info.extra.get('add_cli_arg', True):
+                continue
+            option_default = f_config.default
+            option_type = f_config.type_
+            kwargs = dict(default=option_default, help=help_text)
+            if option_type is bool:
+                action = 'store_false' if option_default is True else 'store_true'
+                kwargs['action'] = action
+
+            parser.addoption(option_name, **kwargs)
 
     @validator('local_secrets_filename')
     def validate_filename_if_using_local_secrets(cls, v, values):
