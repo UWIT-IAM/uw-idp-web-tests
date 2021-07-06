@@ -5,7 +5,13 @@ https://wiki.cac.washington.edu/display/SMW/IAM+Team+Wiki
 
 ATT-1 thru ATT-28.
 """
+import json
+import logging
+from typing import Dict, List, Tuple
 
+from selenium.webdriver.remote.webelement import WebElement
+
+from tests.helpers import logger
 from tests.models import ServiceProviderInstance
 
 
@@ -52,6 +58,27 @@ def test_attributes(browser, netid, utils, sp_shib_url, sp_domain, test_env, log
         'uwStudentSystemKey': '990200200'
     }
 
+    undefined_order_keys = {  # These keys multiple values in an undefined order
+        'eduPersonAffiliation', 'eduPersonScopedAffiliation'
+    }
+
+    def _parse_line(line):
+        parts = line.split('= ', maxsplit=1)
+        if len(parts) == 1:
+            parts.append('')
+        return tuple(map(lambda p: p.strip(), parts))
+
+    def _get_attribute_data() -> Dict[str, str]:
+        browser.get(f'{url}/server-vars.aspx')
+        content: List[str] = list(
+            filter(bool, browser.wait_for_tag('pre', 'cn').text.split("\n"))
+        )
+        attribute_data = {  # Key-value dict of all attributes...
+            k.strip(): v.strip() for k, v in map(_parse_line, content)
+        }
+        logging.debug(f"Parsed attribute data: {json.dumps(attribute_data, indent=4)}")
+        return attribute_data
+
     with utils.using_test_sp(sp):
         browser.set_window_size(1024, 768)
         # go to url to check saml properties
@@ -59,23 +86,14 @@ def test_attributes(browser, netid, utils, sp_shib_url, sp_domain, test_env, log
         url = sp_shib_url(sp)
         browser.get(url)
         log_in_netid(browser, login)
-        browser.get(f'{url}/server-vars.aspx')
-        content = browser.wait_for_tag('pre', 'cn')
-        content_clean = content.get_attribute('innerHTML')
-        attribute_data = [item.strip() for item in content_clean.split("<br>")]
-        wanted_key = 'eduPersonScopedAffiliation'
-        result = next(filter(lambda x: x.startswith(wanted_key), attribute_data))
-        found_values = set(result.split("= ")[1].split(";"))
+        actual_data = _get_attribute_data()
 
         for key, value in attributes_to_test.items():
-            if key == wanted_key:
-                assert found_values == {
-                    'employee@washington.edu',
-                    'student@washington.edu',
-                    'staff@washington.edu',
-                    'member@washington.edu',
-                }, f'Unexpected attributes found in comparison with: {found_values}'
+            if key in undefined_order_keys:
+                target_values = set(value.split(';'))
+                found_values = set(actual_data.get(key, '').split(';'))
+                assert found_values == target_values, \
+                    f'For key {key}, expected values: {target_values} but found {found_values}'
             else:
-                # matches on exact string only. mail won't count as a match for uwEduEmail and uwEduEmail won't match
-                # mail
-                assert f'{key} = {value}' in attribute_data
+                actual = actual_data.get(key)
+                assert actual == value, f'For key {key}, expected value "{value}" but got "{actual}"'

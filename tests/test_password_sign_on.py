@@ -162,9 +162,7 @@ def test_new_session_sign_on_domain_credential(
     """
     PWD-7 New session, sign on with @domain credential format
     """
-    fresh_browser = Chrome()
     login = login_transform(netid)
-    password = secrets.test_accounts.password.get_secret_value()
     sp = ServiceProviderInstance.diafine6
     with utils.using_test_sp(sp):
         fresh_browser.get(sp_shib_url(sp))

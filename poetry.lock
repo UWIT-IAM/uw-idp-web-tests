@@ -598,7 +598,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
 name = "uw-webdriver-recorder"
-version = "4.0.0"
+version = "4.0.1a1"
 description = "A pytest plugin for recording screenshots of selenium interactions, with other convenient features too."
 category = "main"
 optional = false
@@ -624,7 +624,7 @@ multimethod = ">=1.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "af6c7a3971a337e8fd8ebe709e5f7a719c0ede37f233e4fa7d78e0e6ab96be72"
+content-hash = "8d53405b7ab0c314505a2439491f8ac7ea86c1eae3cdfc412b97b54fbe25e948"
 
 [metadata.files]
 appdirs = [
@@ -1039,8 +1039,8 @@ urllib3 = [
     {file = "urllib3-1.26.6.tar.gz", hash = "sha256:f57b4c16c62fa2760b7e3d97c35b255512fb6b59a259730f36ba32ce9f8e342f"},
 ]
 uw-webdriver-recorder = [
-    {file = "uw-webdriver-recorder-4.0.0.tar.gz", hash = "sha256:6ee22bba5dc36db3a5894da2c2c5459c764390bb23c058d2c6d13d718ae39f99"},
-    {file = "uw_webdriver_recorder-4.0.0-py3-none-any.whl", hash = "sha256:1ab3d0bb9033b8ec6509c4da1a8495750c0298433370e25246d8d9249a799d1b"},
+    {file = "uw-webdriver-recorder-4.0.1a1.tar.gz", hash = "sha256:e6eceea552fe561755f39e83d52efb627ce2ebb5be547e4ae7244f4f8865dd71"},
+    {file = "uw_webdriver_recorder-4.0.1a1-py3-none-any.whl", hash = "sha256:cc5d6ce6098a3fcd0291ad11bdc720c6c1830990a58c95d989f219e8c1505e6d"},
 ]
 waiter = [
     {file = "waiter-1.2-py3-none-any.whl", hash = "sha256:7cd4ccec9a7aa632a2a11eebc219fa925221c7150edff31a7030a5198ba4265e"},

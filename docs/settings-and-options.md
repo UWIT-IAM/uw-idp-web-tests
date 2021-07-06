@@ -1,5 +1,17 @@
 # Test Settings and Options
 
+For a list of command-line options available for these tests, use 
+`poetry run pytest --help` (or `./scripts/run-tests.sh -- --help`). Look for the 
+section titled `idp_tests`.
+
+For a list of options available for configuration the dockerized tests, use
+`./scripts/run-tests.sh --help`.
+
+See [settings.yml](../settings.yaml) for the canned settings profiles and default
+options.
+
+---
+
 This test suite aims to be highly configurable where needed. Because there are lots of moving parts here, all 
 settings can be loaded from a `.yaml` file. 
 
