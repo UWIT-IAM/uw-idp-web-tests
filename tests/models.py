@@ -104,6 +104,9 @@ class TestEnvironment(Enum):
 
 
 class TestOptions(BaseSettings):
+    class Config:
+        use_enum_values = True
+
     skip_test_service_provider_start: bool = Field(
         ..., description="If set to true, will only start test SPs if they are needed.")
     skip_test_service_provider_stop: bool = Field(
@@ -123,7 +126,7 @@ class TestOptions(BaseSettings):
         add_cli_arg=False,
         description='If provided will use a Remote instance connection to the server.'
     )
-    env: TestEnvironment = TestEnvironment.prod
+    env: TestEnvironment = TestEnvironment.prod.value
     reuse_chromedriver: int = 4444
 
     @classmethod
