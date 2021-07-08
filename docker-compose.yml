@@ -25,7 +25,6 @@ services:
       TZ: America/Los_Angeles
       PYTEST_ARGS: ${PYTEST_ARGS}
       UPLOAD_FILENAME: ${TEST_ARTIFACT_OBJECT_NAME}
-      REPORT_DIR: /tmp/webdriver-report
       TARGET_IDP_HOST: ${TARGET_IDP_HOST}
     depends_on:
       - chrome
@@ -35,7 +34,6 @@ services:
       - ${REPORT_MOUNT_POINT}:/tmp/webdriver-report
     command: >
       bash -c "./set-idp-host.sh -t ${TARGET_IDP_HOST} &&
-      mkdir -pv ${REPORT_DIR} && rm -vf ${REPORT_DIR}/* &&
       ./wait-for-selenium.sh &&
       echo Running pytest with args: ${PYTEST_ARGS} &&
       pytest ${PYTEST_ARGS}
