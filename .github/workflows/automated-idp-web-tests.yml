@@ -1,4 +1,4 @@
-name: Run UW IdP Web Tests [Automated]
+name: Run UW IdP Web Tests
 
 on:
   push:
@@ -16,9 +16,43 @@ on:
     # https://docs.github.com/en/actions/reference/events-that-trigger-workflows#schedule
     - cron: '0 10 * * *'  # 3am PDT, 2am PST
 
+  workflow_dispatch:
+    inputs:
+      target-idp-env:
+        description: >
+          target-idp-env. Acceptable values are `eval`, `prod`. The idp environment
+          you want to test against.
+        required: true
+        default: eval
+
+      target-idp-host:
+        description: >
+          target-idp-host. Optional. If provided, will add an /etc/hosts entry
+          targeting this host.
+        required: false
+
+      reason:
+        description: >
+          reason. The reason for running this test suite; can be helpful to
+          provide context and distinguish different runs.
+        required: false
+
+      slack-channel:
+        description: >
+          slack-channel. The channel to send a notification to, detailing the
+          context and outcome of the test. (`/invite @iam-github-slack-crier`
+          in the channel, if not already done.)
+        required: true
+        default: '#iam-bot-sandbox'
+
+      pytest-args:
+        description: >
+          pytest-args. Any args you want to send to pytest. You do not ever need to
+          supply `log_cli` arguments.
+        required: false
+
+
 env:
-  IDP_ENV: eval
-  SLACK_CHANNEL: "#iam-bots"
   ###############################################
   # Do not edit the env values below this line. #
   # Other defaults are set in .github/scripts/configure-workflow.sh
@@ -42,14 +76,22 @@ jobs:
       pr-number: ${{ steps.configure.outputs.pr-number }}
       workflow-id: ${{ steps.configure.outputs.workflow-id }}
       workflow-snapshot-artifact: ${{ steps.configure.outputs.workflow-snapshot-artifact }}
+      idp-env: ${{ steps.configure.outputs.idp-env }}
+      idp-host: ${{ steps.configure.outputs.idp-host }}
+      run-tests-args: ${{ steps.configure.outputs.run-tests-args }}
     steps:
       - uses: actions/checkout@main
 
       - id: configure
+        env:
+          INPUT_TARGET_IDP_ENV: ${{ github.event.inputs.target-idp-env }}
+          INPUT_TARGET_IDP_HOST: ${{ github.event.inputs.target-idp-host }}
+          INPUT_REASON: ${{ github.event.inputs.reason }}
+          INPUT_SLACK_CHANNEL: ${{ github.event.inputs.slack-channel }}
+          INPUT_PYTEST_ARGS: ${{ github.event.inputs.pytest-args }}
         run: |
           source ./.github/scripts/configure-workflow.sh
           configure-workflow
-          echo "::set-output name=slack-channel::${{ env.SLACK_CHANNEL }}"
 
       - id: set-envs
         run: |
@@ -63,6 +105,8 @@ jobs:
           export_default_credentials: true
 
       - name: Initialize slack workflow canvas
+        env:
+          IDP_ENV: ${{ steps.configure.outputs.idp-env }}
         with:
           command: create-canvas
           # Since your IDE may not pick up on this as JSON and help you,
@@ -72,7 +116,7 @@ jobs:
               "channel": "${{ steps.configure.outputs.slack-channel }}",
               "canvasId": "${{ steps.configure.outputs.workflow-id }}",
               "status": "in progress",
-              "description": "${{ github.workflow }}",
+              "description": "${{ env.IDP_ENV }} IdP Web Tests",
               "steps": [
                 {
                   "description": "Configure workflow",
@@ -91,7 +135,7 @@ jobs:
               ]
             }
           channel: ${{ steps.configure.outputs.slack-channel }}
-          description: ${{ github.workflow }}
+          description: ${{ env.IDP_ENV }} IdP Web Tests
         uses: UWIT-IAM/actions/update-slack-workflow-canvas@main
 
       - name: add change information to slack canvas
@@ -101,16 +145,18 @@ jobs:
         uses: UWIT-IAM/actions/update-slack-workflow-canvas@main
 
       - env:
-          REPORT_MOUNT_POINT: ${{ steps.configure.outputs.report-object-path }}
+          RUN_TESTS_ARGS: ${{ steps.configure.outputs.run-tests-args }}
+          IDP_ENV: ${{ steps.configure.outputs.idp-env }}
+
         run: |
           exit_status=0
-          if ./scripts/run-tests.sh --report-dir ./$REPORT_MOUNT_POINT +- --env $IDP_ENV
+          if ./scripts/run-tests.sh ${{ env.RUN_TESTS_ARGS }}
           then
-            echo "All tests succeeded for $IDP_ENV"
+            echo "All tests succeeded for ${{ env.IDP_ENV }} succeeded! "
             test_status=succeeded
           else
             exit_status=$?
-            echo "Tests for $IDP_ENV failed with status $exit_status"
+            echo "Tests for ${{ env.IDP_ENV }} failed with status $exit_status"
             test_status=failed
           fi
 

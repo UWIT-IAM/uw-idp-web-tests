@@ -29,7 +29,7 @@ function get-report-output-path() {
       echo "$prefix/$(get-short-sha)"
       ;;
     pull_request)
-      echo "$prefix/$(get-pr-number)"
+      echo "$prefix/$(get-pr-number)/$(get-timestamp)"
       ;;
     schedule)
       echo "$prefix/$(get-timestamp)"
