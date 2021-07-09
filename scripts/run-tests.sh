@@ -7,6 +7,8 @@ function print_help {
    --help/-h      Show this message and exit
    --debug/-g     Show commands as they are executing
    --report-id    Set the report artifact name (not yet used)
+   --report-dir   Set the LOCAL directory where you want
+                  the report output at the end
    --no-build     Do not rebuild the image before running
    --strict-host  Provide this with an arugment (e.g., "idp11") to route all
                   idp traffic to a single host.
@@ -28,13 +30,16 @@ function parse_args() {
         print_help
         exit 0
         ;;
+      --debug|-g)
+        set -x
+        ;;
       --report-id)
         shift
         TEST_ARTIFACT_OBJECT_NAME="$1"
         ;;
       --report-dir)
         shift
-        REPORT_MOUNT_POINT=$1
+        REPORT_MOUNT_POINT="$1"
         ;;
       --no-build)
         NO_BUILD=1
@@ -94,16 +99,21 @@ function sanitize_pytest_args() {
   then
     PYTEST_ARGS="$PYTEST_ARGS --settings-profile docker_compose"
   fi
+  if ! [[ "${PYTEST_ARGS}" =~ '--report-dir' ]]
+  then
+    PYTEST_ARGS="$PYTEST_ARGS --report-dir /tmp/webdriver-report"
+  fi
 }
 
 validate_args
 sanitize_pytest_args
+
 export TARGET_IDP_HOST="${STRICT_HOST}"
 export CREDENTIAL_MOUNT_POINT="$(dirname $GOOGLE_APPLICATION_CREDENTIALS)"
 export CREDENTIAL_FILE_NAME="$(basename $GOOGLE_APPLICATION_CREDENTIALS)"
 export PYTEST_ARGS="${PYTEST_ARGS}"
 export TEST_ARTIFACT_OBJECT_NAME="${REPORT_ID}"
-export REPORT_MOUNT_POINT=${REPORT_DIR:-./webdriver-report}
-export REPORT_DIR="${REPORT_DIR:-./webdriver-report}"
+export REPORT_MOUNT_POINT=${REPORT_MOUNT_POINT:-./webdriver-report}
+rm -vf $REPORT_MOUNT_POINT/worker.*
 export COMPOSE_ARGS="${COMPOSE_ARGS:-up --exit-code-from test-runner}"
-docker-compose -f docker-compose.selenium.yml ${COMPOSE_ARGS}
+docker-compose ${COMPOSE_ARGS}

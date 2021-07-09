@@ -118,7 +118,7 @@ def test_env(settings):
     """
     Determines which environment the tests are run against, prod or eval. Prod is the default.
     """
-    env = settings.test_options.env.value
+    env = settings.test_options.env
     logging.info(f"Testing against {env} idp stack")
     return env
 
@@ -253,7 +253,7 @@ def log_in_netid(secrets: TestSecrets, sp_domain) -> Callable[..., NoReturn]:
 
 
 @pytest.fixture(scope='session')
-def get_fresh_browser(selenium_server, chrome_options) -> Callable[..., BrowserRecorder]:
+def get_fresh_browser(selenium_server, chrome_options, settings) -> Callable[..., BrowserRecorder]:
     """
     This is a fixture function that creates a fresh browser instance
     based on the current environment configuration.
