@@ -22,6 +22,8 @@ EOF
 export PYTEST_ARGS="${PYTEST_ARGS:-"-o log_cli=true -o log_cli_level=info"}"
 test -z "$PYTEST_EXT_ARGS" || PYTEST_ARGS="${PYTEST_ARGS} ${PYTEST_EXT_ARGS}"
 
+IDP_ENV=eval
+
 function parse_args() {
   while (( $# ))
   do
@@ -32,6 +34,10 @@ function parse_args() {
         ;;
       --debug|-g)
         set -x
+        ;;
+      --env|-e)
+        shift
+        IDP_ENV=$1
         ;;
       --report-id)
         shift
@@ -81,7 +87,26 @@ then
   set +e
 fi
 
-function validate_args() {
+function add_strict_host_override() {
+  local host="$1"
+  local ip=$(./scripts/get-idp-ip-address.sh -g -t "$host")
+  if [[ "$?" -gt "0" ]]
+  then
+    echo $ip
+    return 1
+  fi
+
+  compose_override="strict-host-override.docker-compose.yml"
+  local host="idp.u.washington.edu"
+  if [[ "$IDP_ENV" == "eval" ]]
+  then
+    host="idp-eval.u.washington.edu"
+  fi
+  export EXTRA_HOST="$host:$ip"
+  COMPOSE_ARGS+=" -f docker-compose.yml -f $compose_override"
+}
+
+function validate_env() {
   FAILED=
   test -n "${GOOGLE_APPLICATION_CREDENTIALS}" || FAILED=1
   if [[ -n "$FAILED" ]]
@@ -103,10 +128,16 @@ function sanitize_pytest_args() {
   then
     PYTEST_ARGS="$PYTEST_ARGS --report-dir /tmp/webdriver-report"
   fi
+  if ! [[ "${PYTEST_ARGS}" =~ '--env' ]]
+  then
+    PYTEST_ARGS="$PYTEST_ARGS --env $IDP_ENV"
+  fi
 }
 
-validate_args
+validate_env
 sanitize_pytest_args
+
+REQUIRED_COMPOSE_ARGS=${REQUIRED_COMPOSE_ARGS:-up --exit-code-from test-runner}
 
 export TARGET_IDP_HOST="${STRICT_HOST}"
 export CREDENTIAL_MOUNT_POINT="$(dirname $GOOGLE_APPLICATION_CREDENTIALS)"
@@ -114,6 +145,8 @@ export CREDENTIAL_FILE_NAME="$(basename $GOOGLE_APPLICATION_CREDENTIALS)"
 export PYTEST_ARGS="${PYTEST_ARGS}"
 export TEST_ARTIFACT_OBJECT_NAME="${REPORT_ID}"
 export REPORT_MOUNT_POINT=${REPORT_MOUNT_POINT:-./webdriver-report}
-rm -vf $REPORT_MOUNT_POINT/worker.*
-export COMPOSE_ARGS="${COMPOSE_ARGS:-up --exit-code-from test-runner}"
+rm -vf $REPORT_MOUNT_POINT/worker.*  # Clean up workers from a previous run if it
+                                     # exited too early
+test -z "$STRICT_HOST" || add_strict_host_override "$STRICT_HOST"
+COMPOSE_ARGS+=" $REQUIRED_COMPOSE_ARGS"
 docker-compose ${COMPOSE_ARGS}

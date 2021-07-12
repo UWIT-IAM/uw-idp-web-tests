@@ -10,5 +10,5 @@ COPY poetry.lock pyproject.toml ./
 RUN poetry install
 
 FROM poetry-di AS uw-idp-web-tests
-COPY settings.yaml scripts/set-idp-host.sh scripts/wait-for-selenium.sh ./
+COPY settings.yaml scripts/wait-for-selenium.sh ./
 COPY tests/ ./tests

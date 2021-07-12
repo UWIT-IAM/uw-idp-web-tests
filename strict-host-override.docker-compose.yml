@@ -1,0 +1,6 @@
+services:
+  chrome:
+    environment:
+      EXTRA_HOST: ${EXTRA_HOST}
+    extra_hosts:
+      - "${EXTRA_HOST}"
