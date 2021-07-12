@@ -58,20 +58,22 @@ function get-workflow-snapshot-artifact() {
 }
 
 function get-run-tests-args() {
+  # Make sure the mount point is properly formatted for docker-compose;
+  # if it's relative to the current directory, we must add `./`
   local report_mount_point="$1"
   if ! [[ "${report_mount_point:0:1}" =~ [\./] ]]
   then
     report_mount_point="./$report_mount_point"
   fi
   payload="--report-dir $report_mount_point"
+  payload+=" --env $INPUT_TARGET_IDP_ENV"
   if [[ -n "${INPUT_TARGET_IDP_HOST}" ]]
   then
     payload+=" --strict-host ${INPUT_TARGET_IDP_HOST}"
   fi
-  payload+=" +- --env ${INPUT_TARGET_IDP_ENV}"  # All other arguments will be sent to pytest
   if [[ -n "${INPUT_PYTEST_ARGS}" ]]
   then
-    payload+=" ${INPUT_PYTEST_ARGS}"
+    payload+=" +- ${INPUT_PYTEST_ARGS}"
   fi
   echo "$payload"
 }

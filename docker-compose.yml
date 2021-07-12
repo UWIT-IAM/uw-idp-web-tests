@@ -33,7 +33,7 @@ services:
       - ${CREDENTIAL_MOUNT_POINT}:/secrets:ro
       - ${REPORT_MOUNT_POINT}:/tmp/webdriver-report
     command: >
-      bash -c "./set-idp-host.sh -t ${TARGET_IDP_HOST} &&
+      bash -c "
       ./wait-for-selenium.sh &&
       echo Running pytest with args: ${PYTEST_ARGS} &&
       pytest ${PYTEST_ARGS}
