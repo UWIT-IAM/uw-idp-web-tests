@@ -59,7 +59,7 @@ def test_attributes(browser, netid, utils, sp_shib_url, sp_domain, test_env, log
     }
 
     undefined_order_keys = {  # These keys multiple values in an undefined order
-        'eduPersonAffiliation', 'eduPersonScopedAffiliation'
+        'eduPersonAffiliation', 'eduPersonEntitlement', 'eduPersonScopedAffiliation', 'isMemberOf'
     }
 
     def _parse_line(line):
