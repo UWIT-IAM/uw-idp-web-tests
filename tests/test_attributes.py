@@ -10,9 +10,7 @@ import logging
 from typing import Dict, List, Tuple, Optional
 
 import pytest
-from selenium.webdriver.remote.webelement import WebElement
 
-from tests.helpers import logger
 from tests.models import ServiceProviderInstance
 from webdriver_recorder.browser import Chrome
 
