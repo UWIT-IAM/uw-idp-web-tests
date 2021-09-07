@@ -282,7 +282,6 @@ def get_fresh_browser(selenium_server, chrome_options, settings) -> Callable[...
         browser_cls = Chrome
         options.add_experimental_option('detach', True)
         args['port'] = settings.test_options.reuse_chromedriver
-
     return lambda: browser_cls(**args)
 
 
