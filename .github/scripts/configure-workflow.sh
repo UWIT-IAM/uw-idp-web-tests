@@ -57,6 +57,19 @@ function get-workflow-snapshot-artifact() {
   echo "$payload"
 }
 
+function install-uwca-cert() {
+   if [[ -n "${UWCA_CERT}" ]]
+   then
+       echo "${UWCA_CERT}" | base64 -d > /tmp/uwca.crt
+       echo "Installed UWCA certificate"
+   fi
+   if [[ -n "${UWCA_KEY}" ]]
+   then
+       echo "${UWCA_KEY}" | base64 -d > /tmp/uwca.key
+       echo "Installed UWCA certificate key"
+   fi
+}
+
 function get-run-tests-args() {
   # Make sure the mount point is properly formatted for docker-compose;
   # if it's relative to the current directory, we must add `./`
@@ -75,6 +88,14 @@ function get-run-tests-args() {
   then
     payload+=" +- ${INPUT_PYTEST_ARGS}"
   fi
+  if [[ -n "${UWCA_CERT}" ]]
+  then
+    payload+=" --uwca-cert-filename /tmp/uwca.crt"
+  fi
+  if [[ -n "${UWCA_KEY}" ]]
+  then
+    payload+=" --uwca-key-filename /tmp/uwca.key"
+  fi
   echo "$payload"
 }
 
@@ -83,6 +104,7 @@ function configure-workflow() {
   local actor="$GITHUB_ACTOR"
   local artifact_object_path=$(get-report-output-path $event_name)
   INPUT_TARGET_IDP_ENV="${INPUT_TARGET_IDP_ENV:-eval}"
+  install-uwca-cert
   set-output report-object-path "$artifact_object_path"
   set-output report-url "$ARTIFACT_DOMAIN/$artifact_object_path/index.html"
   set-output short-sha "$(get-short-sha)"
