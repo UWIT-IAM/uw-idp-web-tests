@@ -89,6 +89,8 @@ jobs:
           INPUT_REASON: ${{ github.event.inputs.reason }}
           INPUT_SLACK_CHANNEL: ${{ github.event.inputs.slack-channel }}
           INPUT_PYTEST_ARGS: ${{ github.event.inputs.pytest-args }}
+          UWCA_CERT: ${{ secrets.UWCA_CERT }}
+          UWCA_KEY: ${{ secrets.UWCA_KEY }}
         run: |
           source ./.github/scripts/configure-workflow.sh
           configure-workflow

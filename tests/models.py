@@ -127,6 +127,9 @@ class TestOptions(BaseSettings):
         description='If provided will use a Remote instance connection to the server.'
     )
     env: TestEnvironment = TestEnvironment.prod.value
+    uwca_cert_filename: Optional[str] = None
+    uwca_key_filename: Optional[str] = None
+    
     reuse_chromedriver: int = 4444
 
     @classmethod
