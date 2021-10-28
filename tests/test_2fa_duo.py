@@ -5,10 +5,15 @@ https://wiki.cac.washington.edu/display/SMW/IAM+Team+Wiki
 
 2FA-1 thru 2FA-11. 2FA-8b and 2FA-10 are not yet automatable.
 """
+import json
+import time
+
+import requests
 from webdriver_recorder.browser import Chrome
 from tests.helpers import Locators
 from tests.models import ServiceProviderInstance
 import pytest
+import os
 
 
 def test_new_session_no_duo(utils, sp_url, sp_domain, secrets, netid, test_env, fresh_browser, sp_shib_url):
@@ -218,6 +223,29 @@ def test_remember_me_cookie(
     with utils.using_test_sp(sp):
         fresh_browser.get(sp_shib_url(sp, append='mfa'))
         log_in_netid(fresh_browser, netid3, match_service_provider=sp)
+
+    """
+    2FA-10 Forget me Admin
+    """
+
+    os.chdir('tests')
+    os.chdir('cert')
+
+    certificate_file = 'idppem.pem'
+    key_file = 'decrypt-idppem.key'
+    url = f'https://idp{idp_env}.u.washington.edu/refresh_uw/index.cgi/reuser/{netid3}'
+
+    response = requests.put(url, cert=(certificate_file, key_file))
+    response_status_reason = json.dumps(response.status_code) + ' ' + json.dumps(response.reason)
+    assert response_status_reason == '200 "OK"'
+    # wait for the IdP to pick up the change
+    time.sleep(70)
+
+    sp = ServiceProviderInstance.diafine7
+    with utils.using_test_sp(sp):
+        fresh_browser.get(sp_shib_url(sp, append='mfa'))
+        log_in_netid(fresh_browser, netid3, match_service_provider=sp, assert_success=False)
+        enter_duo_passcode(fresh_browser, match_service_provider=sp)
 
 
 def test_forget_me_self_service(utils, sp_url, sp_domain, secrets, netid3, test_env, enter_duo_passcode,
