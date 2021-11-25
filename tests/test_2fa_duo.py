@@ -180,7 +180,7 @@ class Test2FASessionCRNs:
 
 def test_remember_me_cookie(
         utils, sp_shib_url, sp_url, log_in_netid,
-        sp_domain, secrets, netid3, test_env, fresh_browser, enter_duo_passcode):
+        sp_domain, secrets, netid3, test_env, fresh_browser, enter_duo_passcode, settings):
     """
     2FA-9 Remember me cookie
     """
@@ -228,14 +228,16 @@ def test_remember_me_cookie(
     2FA-10 Forget me Admin
     """
 
-    os.chdir('tests')
-    os.chdir('cert')
-
-    certificate_file = 'idppem.pem'
-    key_file = 'decrypt-idppem.key'
+    # os.chdir('tests')
+    # os.chdir('cert')
+    #
+    # certificate_file = 'idppem.pem'
+    # key_file = 'decrypt-idppem.key'
+    cert = (settings.test_options.uwca_cert_filename, settings.test_options.uwca_key_filename)
     url = f'https://idp{idp_env}.u.washington.edu/refresh_uw/index.cgi/reuser/{netid3}'
 
-    response = requests.put(url, cert=(certificate_file, key_file))
+    # response = requests.put(url, cert=(certificate_file, key_file))
+    response = requests.put(url, cert=cert)
     response_status_reason = json.dumps(response.status_code) + ' ' + json.dumps(response.reason)
     assert response_status_reason == '200 "OK"'
     # wait for the IdP to pick up the change
@@ -246,6 +248,21 @@ def test_remember_me_cookie(
         fresh_browser.get(sp_shib_url(sp, append='mfa'))
         log_in_netid(fresh_browser, netid3, match_service_provider=sp, assert_success=False)
         enter_duo_passcode(fresh_browser, match_service_provider=sp)
+
+
+@pytest.mark.uwca_required
+def test_a_thing(
+        utils, sp_shib_url, sp_url, log_in_netid,
+        sp_domain, secrets, netid3, test_env, fresh_browser, enter_duo_passcode, settings):
+
+    idp_env = '-eval' if test_env == 'eval' else ''
+    idp_url = f'https://idp{idp_env}.u.washington.edu/idp'
+
+    cert = (settings.test_options.uwca_cert_filename, settings.test_options.uwca_key_filename)
+    url = f'https://idp{idp_env}.u.washington.edu/refresh_uw/index.cgi/reuser/{netid3}'
+    response = requests.put(url, cert=cert)
+    response_status_reason = json.dumps(response.status_code) + ' ' + json.dumps(response.reason)
+    assert response_status_reason == '200 "OK"'
 
 
 def test_forget_me_self_service(utils, sp_url, sp_domain, secrets, netid3, test_env, enter_duo_passcode,
