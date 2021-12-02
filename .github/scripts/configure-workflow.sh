@@ -70,6 +70,19 @@ function install-uwca-cert() {
    fi
 }
 
+function configure-pytest-args() {
+  local payload="${INPUT_PYTEST_ARGS}"
+  if [[ -n "${UWCA_CERT}" ]]
+  then
+    payload+=" --uwca-cert-filename /tmp/uwca.crt"
+  fi
+  if [[ -n "${UWCA_KEY}" ]]
+  then
+    payload+=" --uwca-key-filename /tmp/uwca.key"
+  fi
+  echo "${payload}"
+}
+
 function get-run-tests-args() {
   # Make sure the mount point is properly formatted for docker-compose;
   # if it's relative to the current directory, we must add `./`
@@ -84,17 +97,11 @@ function get-run-tests-args() {
   then
     payload+=" --strict-host ${INPUT_TARGET_IDP_HOST}"
   fi
-  if [[ -n "${INPUT_PYTEST_ARGS}" ]]
+
+  local pytest_args="$(configure-pytest-args)"
+  if [[ -n "$pytest_args" ]]
   then
-    payload+=" +- ${INPUT_PYTEST_ARGS}"
-  fi
-  if [[ -n "${UWCA_CERT}" ]]
-  then
-    payload+=" --uwca-cert-filename /tmp/uwca.crt"
-  fi
-  if [[ -n "${UWCA_KEY}" ]]
-  then
-    payload+=" --uwca-key-filename /tmp/uwca.key"
+    payload+=" +- ${pytest_args}"
   fi
   echo "$payload"
 }
