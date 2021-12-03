@@ -178,76 +178,80 @@ class Test2FASessionCRNs:
             enter_duo_passcode(self.browser, match_service_provider=self.sp)
 
 
-def test_remember_me_cookie(
-        utils, sp_shib_url, sp_url, log_in_netid,
-        sp_domain, secrets, netid3, test_env, fresh_browser, enter_duo_passcode, settings):
-    """
-    2FA-9 Remember me cookie
-    """
-    password = secrets.test_accounts.password.get_secret_value()
+@pytest.mark.usefixtures('fresh_class_browser')
+class TestRememberForgetAdmin:
+    browser: Chrome
 
-    idp_env = '-eval' if test_env == 'eval' else ''
-    idp_url = f'https://idp{idp_env}.u.washington.edu/idp'
+    @pytest.fixture(autouse=True)
+    def initialize(self, utils, sp_shib_url, sp_url, log_in_netid,
+                   sp_domain, secrets, netid3, test_env, enter_duo_passcode):
+        self.utils = utils
+        self.password = secrets.test_accounts.password.get_secret_value()
+        self.idp_env = '-eval' if test_env == 'eval' else ''
+        self.idp_url = f'https://idp{self.idp_env}.u.washington.edu/idp'
+        self.sp_shib_url = sp_shib_url
+        self.netid3 = netid3
+        self.enter_duo_passcode = enter_duo_passcode
+        self.log_in_netid = log_in_netid
+        self.sp_url = sp_url
 
-    sp = ServiceProviderInstance.diafine6
-    with utils.using_test_sp(sp):
-        fresh_browser.get(sp_shib_url(sp, append='mfa'))
-        fresh_browser.send_inputs(netid3, password)
-        fresh_browser.click(Locators.submit_button)
-        fresh_browser.wait_for_tag('p', 'Use your 2FA device.')
-        fresh_browser.find_element_by_name('rememberme').click()
-        enter_duo_passcode(fresh_browser, match_service_provider=sp)
-        # go to an idp site to retrieve the rememberme cookie
-        fresh_browser.get(idp_url)
-        fresh_browser.wait_for_tag('h1', 'not found')
+    def test_remember_me_cookie(self, secrets):
+        """
+        2FA-9 Remember me cookie
+        """
+        sp = ServiceProviderInstance.diafine6
+        with self.utils.using_test_sp(sp):
+            self.browser.get(self.sp_shib_url(sp, append='mfa'))
+            self.browser.send_inputs(self.netid3, self.password)
+            self.browser.click(Locators.submit_button)
+            self.browser.wait_for_tag('p', 'Use your 2FA device.')
+            self.browser.find_element_by_name('rememberme').click()
+            self.enter_duo_passcode(self.browser, match_service_provider=sp)
+            # go to an idp site to retrieve the rememberme cookie
+            self.browser.get(self.idp_url)
+            self.browser.wait_for_tag('h1', 'not found')
 
-        # look for these cookies:
-        # shib_idp_session, shib_idp_session_ss, and uw-rememberme-sptest03
+            # look for these cookies:
+            # shib_idp_session, shib_idp_session_ss, and uw-rememberme-sptest03
 
-        cookie_names = {cookie['name'] for cookie in fresh_browser.get_cookies()}
-        assert 'shib_idp_session' in cookie_names
-        assert 'shib_idp_session_ss' in cookie_names
-        assert 'uw-rememberme-sptest03' in cookie_names
+            cookie_names = {cookie['name'] for cookie in self.browser.get_cookies()}
+            assert 'shib_idp_session' in cookie_names
+            assert 'shib_idp_session_ss' in cookie_names
+            assert 'uw-rememberme-sptest03' in cookie_names
 
-        fresh_browser.get(f'{sp_url(sp)}/Shibboleth.sso/Logout?return={idp_url}/profile/Logout')
-        # After signing out of the IdP, the rememberme cookie should remain in the browser,
-        # but shib_idp_session* cookies should be gone.
-        fresh_browser.wait_for_tag('span', 'Your UW NetID sign-in session has ended.')
+            self.browser.get(f'{self.sp_url(sp)}/Shibboleth.sso/Logout?return={self.idp_url}/profile/Logout')
+            # After signing out of the IdP, the rememberme cookie should remain in the browser,
+            # but shib_idp_session* cookies should be gone.
+            self.browser.wait_for_tag('span', 'Your UW NetID sign-in session has ended.')
 
-        cookie_names = {cookie['name'] for cookie in fresh_browser.get_cookies()}
-        assert 'shib_idp_session' not in cookie_names
-        assert 'shib_idp_session_ss' not in cookie_names
-        assert 'uw-rememberme-sptest03' in cookie_names
+            cookie_names = {cookie['name'] for cookie in self.browser.get_cookies()}
+            assert 'shib_idp_session' not in cookie_names
+            assert 'shib_idp_session_ss' not in cookie_names
+            assert 'uw-rememberme-sptest03' in cookie_names
 
-    sp = ServiceProviderInstance.diafine12
-    with utils.using_test_sp(sp):
-        fresh_browser.get(sp_shib_url(sp, append='mfa'))
-        log_in_netid(fresh_browser, netid3, match_service_provider=sp)
+        sp = ServiceProviderInstance.diafine12
+        with self.utils.using_test_sp(sp):
+            self.browser.get(self.sp_shib_url(sp, append='mfa'))
+            self.log_in_netid(self.browser, self.netid3, match_service_provider=sp)
 
-    """
-    2FA-10 Forget me Admin
-    """
+    def test_forget_me_admin(self, settings):
+        """
+        2FA-10 Forget me Admin
+        """
+        cert = (settings.test_options.uwca_cert_filename, settings.test_options.uwca_key_filename)
+        idp_url = f'https://idp{self.idp_env}.u.washington.edu/refresh_uw/index.cgi/reuser/{self.netid3}'
 
-    # os.chdir('tests')
-    # os.chdir('cert')
-    #
-    # certificate_file = 'idppem.pem'
-    # key_file = 'decrypt-idppem.key'
-    cert = (settings.test_options.uwca_cert_filename, settings.test_options.uwca_key_filename)
-    url = f'https://idp{idp_env}.u.washington.edu/refresh_uw/index.cgi/reuser/{netid3}'
+        response = requests.put(idp_url, cert=cert)
+        response_status_reason = json.dumps(response.status_code) + ' ' + json.dumps(response.reason)
+        assert response_status_reason == '200 "OK"'
+        # wait for the IdP to pick up the change
+        time.sleep(70)
 
-    # response = requests.put(url, cert=(certificate_file, key_file))
-    response = requests.put(url, cert=cert)
-    response_status_reason = json.dumps(response.status_code) + ' ' + json.dumps(response.reason)
-    assert response_status_reason == '200 "OK"'
-    # wait for the IdP to pick up the change
-    time.sleep(70)
-
-    sp = ServiceProviderInstance.diafine7
-    with utils.using_test_sp(sp):
-        fresh_browser.get(sp_shib_url(sp, append='mfa'))
-        log_in_netid(fresh_browser, netid3, match_service_provider=sp, assert_success=False)
-        enter_duo_passcode(fresh_browser, match_service_provider=sp)
+        sp = ServiceProviderInstance.diafine7
+        with self.utils.using_test_sp(sp):
+            self.browser.get(self.sp_shib_url(sp, append='mfa'))
+            self.log_in_netid(self.browser, self.netid3, match_service_provider=sp, assert_success=False)
+            self.enter_duo_passcode(self.browser, match_service_provider=sp)
 
 
 @pytest.mark.uwca_required
@@ -256,11 +260,10 @@ def test_a_thing(
         sp_domain, secrets, netid3, test_env, fresh_browser, enter_duo_passcode, settings):
 
     idp_env = '-eval' if test_env == 'eval' else ''
-    idp_url = f'https://idp{idp_env}.u.washington.edu/idp'
-
+    idp_url = f'https://idp{idp_env}.u.washington.edu/refresh_uw/index.cgi/reuser/{netid3}'
     cert = (settings.test_options.uwca_cert_filename, settings.test_options.uwca_key_filename)
-    url = f'https://idp{idp_env}.u.washington.edu/refresh_uw/index.cgi/reuser/{netid3}'
-    response = requests.put(url, cert=cert)
+
+    response = requests.put(idp_url, cert=cert)
     response_status_reason = json.dumps(response.status_code) + ' ' + json.dumps(response.reason)
     assert response_status_reason == '200 "OK"'
 
