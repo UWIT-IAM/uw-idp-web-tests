@@ -42,7 +42,7 @@ services:
   # Originally sourced from vendor-provided documentation
   # at: https://github.com/SeleniumHQ/docker-selenium/tree/selenium-3
   selenium-hub:
-    image: selenium/hub:3.141.59-20210607
+    image: selenium/hub:3.141.59
     container_name: selenium-hub
     ports:
       - "4444:4444"
@@ -50,7 +50,7 @@ services:
       driver: 'none'
 
   chrome:
-    image: selenium/node-chrome:3.141.59-20210607
+    image: selenium/node-chrome:3.141.59
     volumes:
       - /dev/shm:/dev/shm
     depends_on:
