@@ -4,18 +4,31 @@ function print_help {
    cat <<EOF
    Use: run-tests.sh [--debug --help]
    Options:
-   --help/-h      Show this message and exit
-   --debug/-g     Show commands as they are executing
-   --report-id    Set the report artifact name (not yet used)
    --report-dir   Set the LOCAL directory where you want
-                  the report output at the end
+                  the report output at the end (defaults to './webdriver-report')
+
    --no-build     Do not rebuild the image before running
-   --strict-host  Provide this with an arugment (e.g., "idp11") to route all
+
+   --strict-host  Provide this with an argument (e.g., "idp11") to route all
                   idp traffic to a single host.
-   --source-tag   You may define a different image other than `latest`
-                  for the base UWIT-IAM/poetry image
+
+   --uwca-cert/-uc  (Optional) The file name of the UWCA certificate that
+                           is necessary to run certain tests. If this is set, then
+                           --uwca-key must also be set; both files must be in the
+                           same directory.
+
+   --uwca-key/-uk          (Optional) The file name of the UWCA key that is necessary
+                           to run certain tests. If this is set, then --uwca-cert
+                           must also be set; both files must be in the same directory.
+
    -- [...]       All input after `--` will be sent to pytest as CLI arguments.
    +- [...]       All input after `+-` will be appended to default pytest CLI arguments.
+
+   --source-tag   You may define a different image other than `latest`
+                  for the base UWIT-IAM/poetry image here. (You shouldn't need to.)
+   --report-id    Set the report artifact name (not yet used)
+   --help/-h      Show this message and exit
+   --debug/-g     Show commands as they are executing
 EOF
 }
 
@@ -58,6 +71,14 @@ function parse_args() {
         shift
         STRICT_HOST=$1
         ;;
+      --uwca-cert|-uc)
+        shift
+        UWCA_CERT="${1}"
+        ;;
+      --uwca-key|-uk)
+        shift
+        UWCA_KEY="${1}"
+        ;;
       --)
         shift
         export PYTEST_ARGS="$@"
@@ -78,14 +99,13 @@ function parse_args() {
   done
 }
 
-parse_args "$@" || exit 1
 
-if [[ -z "${NO_BUILD}" ]]
-then
-  set -e
-  docker build --build-arg SOURCE_TAG -t ghcr.io/uwit-iam/idp-web-tests:build .
-  set +e
-fi
+function build_images() {
+    set -e
+    ./scripts/build-images.sh
+    set +e
+}
+
 
 function add_strict_host_override() {
   local host="$1"
@@ -122,29 +142,62 @@ function validate_env() {
 function sanitize_pytest_args() {
   if ! [[ "${PYTEST_ARGS}" =~ '--settings-profile' ]]
   then
-    PYTEST_ARGS="$PYTEST_ARGS --settings-profile docker_compose"
+    PYTEST_ARGS+=" --settings-profile docker_compose"
   fi
   if ! [[ "${PYTEST_ARGS}" =~ '--report-dir' ]]
   then
-    PYTEST_ARGS="$PYTEST_ARGS --report-dir /tmp/webdriver-report"
+    PYTEST_ARGS+=" --report-dir /tmp/webdriver-report"
   fi
   if ! [[ "${PYTEST_ARGS}" =~ '--env' ]]
   then
-    PYTEST_ARGS="$PYTEST_ARGS --env $IDP_ENV"
+    PYTEST_ARGS+=" --env $IDP_ENV"
+  fi
+  if [[ -n "$UWCA_CERT" ]]
+  then
+    PYTEST_ARGS+=" --uwca-cert-filename /certificates/$(basename $UWCA_CERT)"
+    PYTEST_ARGS+=" --uwca-key-filename /certificates/$(basename $UWCA_KEY)"
   fi
 }
 
+parse_args "$@" || exit 1
 validate_env
 sanitize_pytest_args
-
 REQUIRED_COMPOSE_ARGS=${REQUIRED_COMPOSE_ARGS:-up --exit-code-from test-runner}
+
+test -n "${NO_BUILD}" || build_images
+
 
 export TARGET_IDP_HOST="${STRICT_HOST}"
 export CREDENTIAL_MOUNT_POINT="$(dirname $GOOGLE_APPLICATION_CREDENTIALS)"
 export CREDENTIAL_FILE_NAME="$(basename $GOOGLE_APPLICATION_CREDENTIALS)"
+
+if [[ -n "${UWCA_CERT}" ]]
+then
+    export UWCA_MOUNT_POINT="$(dirname $UWCA_CERT)"
+    UWCA_KEY_MOUNT_POINT="$(dirname $UWCA_KEY)"
+
+    if [[ "${UWCA_KEY_MOUNT_POINT}" != "${UWCA_MOUNT_POINT}" ]]
+    then
+        echo "Cannot mount a certificate and key from different directories."
+        echo "Either remove those arguments or place both files in the "
+        echo "same directory and try again."
+        echo "place both files in the same directory and try again."
+        echo "UWCA_CERT=${UWCA_CERT}"
+        echo "UWCA_KEY=${UWCA_KEY}"
+        exit 1
+    fi
+else
+    mount_dir="/tmp/idp-mount"
+    mkdir -pv "${mount_dir}"
+    # This just mounts an empty directory in readonly mode as a placeholder
+    # otherwise docker-compose would fail because of an empty volume source.
+    export UWCA_MOUNT_POINT="${mount_dir}"
+fi
+
 export PYTEST_ARGS="${PYTEST_ARGS}"
 export TEST_ARTIFACT_OBJECT_NAME="${REPORT_ID}"
 export REPORT_MOUNT_POINT=${REPORT_MOUNT_POINT:-./webdriver-report}
+
 rm -vf $REPORT_MOUNT_POINT/worker.*  # Clean up workers from a previous run if it
                                      # exited too early
 test -z "$STRICT_HOST" || add_strict_host_override "$STRICT_HOST"

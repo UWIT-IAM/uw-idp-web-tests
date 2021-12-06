@@ -1,0 +1,54 @@
+name: Run UW IdP Web Tests
+
+on:
+  push:
+    branches:
+      # This branch override is meant to act as a way of validating
+      # the workflow itself, which is difficult to do well out
+      # of context. Feel free to push to this branch at any time.
+      # You may need to use `-f` when pushing.
+      - deleteme
+
+env:
+  UWCA_CERT: ${{ secrets.UWCA_CERT }}
+  UWCA_KEY: ${{ secrets.UWCA_KEY }}
+
+  ###############################################
+  # Do not edit the env values below this line. #
+  # Other defaults are set in .github/scripts/configure-workflow.sh
+  SLACK_BOT_TOKEN: ${{ secrets.ACTIONS_SLACK_BOT_TOKEN }}
+  ARTIFACT_BUCKET: ${{ secrets.IDENTITY_ARTIFACT_BUCKET }}
+  ###############################################
+
+jobs:
+  run-idp-web-tests:
+    name: Configure and run tests, and upload test artifacts
+    runs-on: ubuntu-latest
+    env:
+      UPLOAD_STATUS: 'not started'
+      ARTIFACT_HOST: "https://identity-artifact.iamdev.s.uw.edu"
+    outputs:
+      slack-channel: ${{ steps.configure.outputs.slack-channel }}
+      # These outputs come from the configure-workflow.sh script
+      report-object-path: ${{ steps.configure.outputs.report-object-path }}
+      report-url: ${{ steps.configure.outputs.report-url }}
+      short-sha: ${{ steps.configure.outputs.short-sha }}
+      pr-number: ${{ steps.configure.outputs.pr-number }}
+      workflow-id: ${{ steps.configure.outputs.workflow-id }}
+      workflow-snapshot-artifact: ${{ steps.configure.outputs.workflow-snapshot-artifact }}
+      idp-env: ${{ steps.configure.outputs.idp-env }}
+      idp-host: ${{ steps.configure.outputs.idp-host }}
+    steps:
+      - uses: actions/checkout@main
+
+      - id: configure
+        run: |
+          source ./.github/scripts/configure-workflow.sh
+          configure-workflow
+          ls -alh /tmp/uwca.*
+          cat /etc/hosts
+          echo $(curl -v \
+            -L \
+            --cert /tmp/uwca.crt \
+            --key /tmp/uwca.key -X PUT \
+            https://idp.u.washington.edu/refresh_uw/index.cgi/reuser/sptest03)

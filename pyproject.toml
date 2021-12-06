@@ -20,8 +20,15 @@ typing-extensions = "^3.10.0"
 # is merged and released.
 uw-webdriver-recorder = "^4.0"
 waiter = "^1.2"
+requests = {extras = ["security"], version = "^2.26.0"}
+
+[tool.pytest.ini_options]
+markers = [
+    "uwca_required: marks a test as requiring a UWCA certificate and key."
+]
 
 [tool.poetry.dev-dependencies]
+hyper = "^0.7.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

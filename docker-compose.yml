@@ -18,7 +18,7 @@ services:
   # except for the "--report-dir," which is mounted to the host's working directory.
   # For more information on useful arguments, see docs/pytest.md.
   test-runner:
-    image: ghcr.io/uwit-iam/idp-web-tests:build
+    image: ghcr.io/uwit-iam/idp-web-tests:latest
     environment:
       GOOGLE_APPLICATION_CREDENTIALS: /secrets/${CREDENTIAL_FILE_NAME}
       AWS_DEFAULT_REGION: us-west-2
@@ -31,6 +31,7 @@ services:
       - selenium-hub
     volumes:
       - ${CREDENTIAL_MOUNT_POINT}:/secrets:ro
+      - ${UWCA_MOUNT_POINT}:/certificates:ro
       - ${REPORT_MOUNT_POINT}:/tmp/webdriver-report
     command: >
       bash -c "
