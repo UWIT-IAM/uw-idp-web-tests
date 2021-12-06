@@ -21,6 +21,11 @@ typing-extensions = "^3.10.0"
 uw-webdriver-recorder = "^4.0"
 waiter = "^1.2"
 
+[tool.pytest.ini_options]
+markers = [
+    "uwca_required: marks a test as requiring a UWCA certificate and key."
+]
+
 [tool.poetry.dev-dependencies]
 
 [build-system]

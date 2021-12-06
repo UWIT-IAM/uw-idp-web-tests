@@ -6,6 +6,7 @@ https://wiki.cac.washington.edu/display/SMW/IAM+Team+Wiki
 2FA-1 thru 2FA-11. 2FA-8b and 2FA-10 are not yet automatable.
 """
 import json
+import logging
 import time
 
 import requests
@@ -239,9 +240,17 @@ class TestRememberForgetAdmin:
         2FA-10 Forget me Admin
         """
         cert = (settings.test_options.uwca_cert_filename, settings.test_options.uwca_key_filename)
+        for f in cert:
+            assert os.path.exists(f), f'Cannot start test; {f} not found'
+
         idp_url = f'https://idp{self.idp_env}.u.washington.edu/refresh_uw/index.cgi/reuser/{self.netid3}'
 
-        response = requests.put(idp_url, cert=cert)
+        try:
+            response = requests.put(idp_url, cert=cert)
+        except Exception as e:
+            logging.exception(f'Could not process PUT to {idp_url}: {str(e)}')
+            raise e
+
         response_status_reason = json.dumps(response.status_code) + ' ' + json.dumps(response.reason)
         assert response_status_reason == '200 "OK"'
         # wait for the IdP to pick up the change

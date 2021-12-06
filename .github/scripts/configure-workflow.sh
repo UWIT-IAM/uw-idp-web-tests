@@ -58,29 +58,45 @@ function get-workflow-snapshot-artifact() {
 }
 
 function install-uwca-cert() {
-   if [[ -n "${UWCA_CERT}" ]]
-   then
-       echo "${UWCA_CERT}" | base64 -d > /tmp/uwca.crt
-       echo "Installed UWCA certificate"
-   fi
-   if [[ -n "${UWCA_KEY}" ]]
-   then
-       echo "${UWCA_KEY}" | base64 -d > /tmp/uwca.key
-       echo "Installed UWCA certificate key"
-   fi
-}
-
-function configure-pytest-args() {
-  local payload="${INPUT_PYTEST_ARGS}"
-  if [[ -n "${UWCA_CERT}" ]]
-  then
-    payload+=" --uwca-cert-filename /tmp/uwca.crt"
-  fi
-  if [[ -n "${UWCA_KEY}" ]]
-  then
-    payload+=" --uwca-key-filename /tmp/uwca.key"
-  fi
-  echo "${payload}"
+    if [[ -z "${UWCA_CERT}" ]]
+    then
+        echo "No UWCA certificate is configured in the Action environment!"
+        FAIL=1
+       fi
+    if [[ -z "${UWCA_CERT}" ]]
+    then
+        echo "No UWCA certificate key is configured in the Action environment!"
+        FAIL=1
+    fi
+    test -z "${FAIL}" || return 1
+    if ! echo "${UWCA_CERT}" | base64 -d > /tmp/uwca.crt
+    then
+        FAIL=1
+        echo "::error::Could not install UWCA certificate; value is not stored as base64."
+    else
+        echo "Installed UWCA certificate"
+    fi
+    if ! echo "${UWCA_KEY}" | base64 -d > /tmp/uwca.key
+    then
+        FAIL=1
+        echo "::error::Could not install UWCA certificate key; value is not stored as base64."
+    else
+        echo "Installed UWCA certificate key"
+    fi
+    echo "Validating UWCA cert/key . . ."
+    set -x
+    key_mod=$(openssl rsa -modulus -noout -in /tmp/uwca.key | openssl md5)
+    cert_mod=$(openssl x509 -modulus -noout -in /tmp/uwca.crt | openssl md5)
+    if [[ "${key_mod}" != "${cert_mod}" ]]
+    then
+        FAIL=1
+        echo "::error::UWCA certificate and key do not match."
+    fi
+    set +x
+    if [[ -n "${FAIL}" ]]
+    then
+        echo "::error::UWCA certificate installation unsuccessful"
+    fi
 }
 
 function get-run-tests-args() {
@@ -93,15 +109,16 @@ function get-run-tests-args() {
   fi
   payload="--report-dir $report_mount_point"
   payload+=" --env $INPUT_TARGET_IDP_ENV"
+  payload+=" --uwca-cert /tmp/uwca.crt"
+  payload+=" --uwca-key /tmp/uwca.key"
   if [[ -n "${INPUT_TARGET_IDP_HOST}" ]]
   then
     payload+=" --strict-host ${INPUT_TARGET_IDP_HOST}"
   fi
 
-  local pytest_args="$(configure-pytest-args)"
-  if [[ -n "$pytest_args" ]]
+  if [[ -n "$INPUT_PYTEST_ARGS" ]]
   then
-    payload+=" +- ${pytest_args}"
+    payload+=" +- ${INPUT_PYTEST_ARGS}"
   fi
   echo "$payload"
 }
@@ -111,7 +128,11 @@ function configure-workflow() {
   local actor="$GITHUB_ACTOR"
   local artifact_object_path=$(get-report-output-path $event_name)
   INPUT_TARGET_IDP_ENV="${INPUT_TARGET_IDP_ENV:-eval}"
-  install-uwca-cert
+  if ! install-uwca-cert
+  then
+    echo "Could not configure workflow; UWCA certificate and/or key is missing."
+    return 1
+  fi
   set-output report-object-path "$artifact_object_path"
   set-output report-url "$ARTIFACT_DOMAIN/$artifact_object_path/index.html"
   set-output short-sha "$(get-short-sha)"

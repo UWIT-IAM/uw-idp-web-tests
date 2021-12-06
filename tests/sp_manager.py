@@ -1,8 +1,6 @@
-from typing import Optional, List
-
 import click
 
-from tests.secret_manager import SecretManager
+from .secret_manager import SecretManager
 from .models import ServiceProviderInstance, TestSecrets
 from .helpers import ServiceProviderAWSOperations, load_settings, WebTestUtils
 import logging

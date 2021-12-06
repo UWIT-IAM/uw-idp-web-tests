@@ -3,3 +3,4 @@ webdriver-report
 secrets.json
 /*/**/__pycache__/*
 
+.build-scripts
