@@ -1,0 +1,58 @@
+on:
+  workflow_dispatch:
+    inputs:
+      load-balancer-ip:
+        description: (Optional) Specific IP address to route all idp requests through.
+        required: false
+      num-login-attempts:
+        description: The number of login cycles you want each client to perform.
+        required: true
+        default: 30
+      wait-time-seconds:
+        description: How long, in seconds, to wait between login attempts.
+        required: true
+        default: 60
+
+jobs:
+  generate-login-requests:
+    strategy:
+      # When you update max-parallel, you must also add a runner-id entry under
+      # "include" below.
+      max-parallel: 6
+      matrix:
+        # In order to run things in parallel, Actions, needs
+        # _something_ to be part of a matrix. We'll just use some hard-coded ids.
+        # When you add something here, you must also increment the max-parallel setting
+        # above.
+        include:
+          - runner-id: 1
+          - runner-id: 2
+          - runner-id: 3
+          - runner-id: 4
+          - runner-id: 5
+          - runner-id: 6
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - env:
+          load_balancer: ${{ github.event.inputs.load-balancer-ip }}
+          num_loops: ${{ github.event.inputs.num-login-attempts }}
+          sleep_time: ${{ github.event.inputs.wait-time-seconds }}
+          # The idp_env has to be prod here. If we need to make this an eval instance
+          # instead, we'll need to update the tests to log in with a service using the
+          # eval idp.
+          idp_env: prod
+        run: |
+          ip_addr=$(dig ANY +short @resolver2.opendns.com myip.opendns.com)
+          echo "::notice::Test runner ${{ matrix.runner-id }} IP address is ${ip_addr}"
+          run_tests_args="--with-override workflow --env ${idp_env}"
+          run_tests_args+=$(
+            test -z '${{ env.load_balancer }}' \
+            || echo ' --strict-ip ${{ env.load_balancer }}'
+          )
+          ./scripts/run-tests.sh ${run_tests_args} \
+            +- --skip-test-service-provider-start \
+            --skip-test-service-provider-stop \
+            --lb-num-loops ${num_loops} \
+            --lb-sleep-time ${sleep_time} \
+            tests/test_load_balancer.py
