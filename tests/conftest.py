@@ -16,6 +16,12 @@ def pytest_addoption(parser):
                      help="Use this if you want to provide a settings YAML file yourself.")
     group.addoption('--settings-profile', default='base',
                      help="Use this if you want to use settings from a specific root node of the settings file.")
+    group.addoption('--lb-num-loops', default=0,
+                    help="If set to a number greater than 0, "
+                         "the test_generate_requests.py test will make IdP requests the given number of times.")
+    group.addoption('--lb-sleep-time', default=60,
+                    help="The number of seconds to sleep between login attempts when running the 'load-balancer' "
+                         "mark.")
 
     TestOptions.apply_to_parser(group)
 
