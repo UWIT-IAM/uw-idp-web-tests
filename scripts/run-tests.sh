@@ -113,6 +113,7 @@ function add_strict_host_override() {
     host="idp-eval.u.washington.edu"
   fi
   export EXTRA_HOST="$host:$ip"
+  echo "Adding hosts override to Chrome instance: ${EXTRA_HOST}"
   COMPOSE_ARGS+=" -f docker-compose.yml -f $compose_override"
 }
 
@@ -157,6 +158,9 @@ export TEST_ARTIFACT_OBJECT_NAME="${REPORT_ID}"
 export REPORT_MOUNT_POINT=${REPORT_MOUNT_POINT:-./webdriver-report}
 rm -vf $REPORT_MOUNT_POINT/worker.*  # Clean up workers from a previous run if it
                                      # exited too early
-test -z "$STRICT_HOST" || add_strict_host_override "$STRICT_HOST" "$STRICT_IP"
+if [[ -n "${STRICT_HOST}" ]] || [[ -n "${STRICT_IP}" ]]
+then
+  add_strict_host_override "$STRICT_HOST" "$STRICT_IP"
+fi
 COMPOSE_ARGS+=" $REQUIRED_COMPOSE_ARGS"
 docker-compose ${COMPOSE_ARGS}
