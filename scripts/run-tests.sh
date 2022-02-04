@@ -10,8 +10,10 @@ function print_help {
    --report-dir   Set the LOCAL directory where you want
                   the report output at the end
    --no-build     Do not rebuild the image before running
-   --strict-host  Provide this with an arugment (e.g., "idp11") to route all
-                  idp traffic to a single host.
+   --strict-host  Provide this with an argument (e.g., "idp11") to route all
+                  idp traffic to a single IdP host.
+   --strict-ip    (Overrides --strict-host) An explicit ip address to use in the
+                  /etc/hosts entry on the chrome container for the IdP URL.
    --source-tag   You may define a different image other than `latest`
                   for the base UWIT-IAM/poetry image
    -- [...]       All input after `--` will be sent to pytest as CLI arguments.
@@ -58,6 +60,10 @@ function parse_args() {
         shift
         STRICT_HOST=$1
         ;;
+      --strict-ip)
+        shift
+        STRICT_IP=$1
+        ;;
       --)
         shift
         export PYTEST_ARGS="$@"
@@ -89,11 +95,15 @@ fi
 
 function add_strict_host_override() {
   local host="$1"
-  local ip=$(./scripts/get-idp-ip-address.sh -g -t "$host")
-  if [[ "$?" -gt "0" ]]
+  local ip="$2"
+  if [[ -z "${ip}" ]]
   then
-    echo $ip
-    return 1
+    ip=$(./scripts/get-idp-ip-address.sh -g -t "$host")
+    if [[ "$?" -gt "0" ]]
+    then
+      echo $ip  # Will be whatever error output from the get-ip script.
+      return 1
+    fi
   fi
 
   compose_override="strict-host-override.docker-compose.yml"
@@ -147,6 +157,6 @@ export TEST_ARTIFACT_OBJECT_NAME="${REPORT_ID}"
 export REPORT_MOUNT_POINT=${REPORT_MOUNT_POINT:-./webdriver-report}
 rm -vf $REPORT_MOUNT_POINT/worker.*  # Clean up workers from a previous run if it
                                      # exited too early
-test -z "$STRICT_HOST" || add_strict_host_override "$STRICT_HOST"
+test -z "$STRICT_HOST" || add_strict_host_override "$STRICT_HOST" "$STRICT_IP"
 COMPOSE_ARGS+=" $REQUIRED_COMPOSE_ARGS"
 docker-compose ${COMPOSE_ARGS}
