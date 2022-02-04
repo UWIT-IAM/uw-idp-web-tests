@@ -20,8 +20,8 @@ def pytest_addoption(parser):
                     help="If set to a number greater than 0, "
                          "the test_generate_requests.py test will make IdP requests the given number of times.")
     group.addoption('--lb-sleep-time', default=60,
-                    help="The number of seconds to sleep between login attempts when running the 'load-balancer' "
-                         "mark.")
+                    help="The number of seconds to sleep between login attempts when running login request "
+                         "generator.")
 
     TestOptions.apply_to_parser(group)
 
