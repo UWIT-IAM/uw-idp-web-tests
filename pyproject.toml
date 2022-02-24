@@ -18,7 +18,7 @@ PyYAML = "^5.4.1"
 typing-extensions = "^3.10.0"
 # Pinned until https://github.com/UWIT-IAM/webdriver-recorder/pull/25
 # is merged and released.
-uw-webdriver-recorder = "^4.0"
+uw-webdriver-recorder = "^5.0"
 waiter = "^1.2"
 
 [tool.poetry.dev-dependencies]

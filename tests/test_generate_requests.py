@@ -1,6 +1,6 @@
 import time
 
-from webdriver_recorder.browser import Locator, SearchMethod
+from webdriver_recorder.browser import Locator, By
 
 
 def test_make_continuous_requests(request, browser, netid, secrets):
@@ -16,7 +16,7 @@ def test_make_continuous_requests(request, browser, netid, secrets):
         browser.get('https://directory.uw.edu/saml/login')
         try:  # User may not be prompted to sign in, that's OK, we're still going through the IdP
             browser.click(Locator(
-                search_method=SearchMethod.ID,
+                search_method=By.ID,
                 search_value='weblogin_netid',
             ))
             browser.send_inputs(
@@ -24,7 +24,7 @@ def test_make_continuous_requests(request, browser, netid, secrets):
                 secrets.test_accounts.password.get_secret_value(),
             )
             browser.click(Locator(
-                search_method=SearchMethod.ID,
+                search_method=By.ID,
                 search_value='submit_button',
             ))
         except Exception:
@@ -32,7 +32,7 @@ def test_make_continuous_requests(request, browser, netid, secrets):
         finally:
             try:  # The population-option-all element is only present when a user is signed in
                 browser.wait_for(Locator(
-                    search_method=SearchMethod.ID,
+                    search_method=By.ID,
                     search_value='population-option-all',
                 ))
             except Exception:

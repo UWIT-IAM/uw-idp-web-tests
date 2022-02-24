@@ -1,6 +1,3 @@
-# To execute this docker-compose yml file use `docker-compose -f docker-compose-v3.yml up`
-# Add the `-d` flag at the end for detached execution
-# To stop the execution, hit Ctrl+C, and then `docker-compose -f docker-compose-v3.yml down`
 version: "3"
 services:
   # This is the testing image built from the Dockerfile in this repository.
@@ -19,6 +16,10 @@ services:
   # For more information on useful arguments, see docs/pytest.md.
   test-runner:
     image: ghcr.io/uwit-iam/idp-web-tests:build
+    build:
+      dockerfile: Dockerfile
+      context: .
+      target: test-runner
     environment:
       GOOGLE_APPLICATION_CREDENTIALS: /secrets/${CREDENTIAL_FILE_NAME}
       AWS_DEFAULT_REGION: us-west-2
@@ -26,37 +27,24 @@ services:
       PYTEST_ARGS: ${PYTEST_ARGS}
       UPLOAD_FILENAME: ${TEST_ARTIFACT_OBJECT_NAME}
       TARGET_IDP_HOST: ${TARGET_IDP_HOST}
+      disable_session_browser: 1
     depends_on:
-      - chrome
-      - selenium-hub
+      - selenium
     volumes:
       - ${CREDENTIAL_MOUNT_POINT}:/secrets:ro
       - ${REPORT_MOUNT_POINT}:/tmp/webdriver-report
-    command: >
-      bash -c "
-      ./wait-for-selenium.sh &&
-      echo Running pytest with args: ${PYTEST_ARGS} &&
-      pytest ${PYTEST_ARGS}
-      "
+    command: pytest ${PYTEST_ARGS} --selenium-server selenium:4444
 
-  # Originally sourced from vendor-provided documentation
-  # at: https://github.com/SeleniumHQ/docker-selenium/tree/selenium-3
-  selenium-hub:
-    image: selenium/hub:3.141.59
-    container_name: selenium-hub
-    ports:
-      - "4444:4444"
-    logging:
-      driver: 'none'
-
-  chrome:
-    image: selenium/node-chrome:3.141.59
-    volumes:
-      - /dev/shm:/dev/shm
-    depends_on:
-      - selenium-hub
+  selenium:
+    image: selenium/standalone-chrome:4
     environment:
-      - HUB_HOST=selenium-hub
-      - HUB_PORT=4444
+      SE_NODE_MAX_SESSIONS: 2  # - Allow up to this many concurrent browser instances
+                               # on the selenium node.
+      SE_START_XFVB: "false"   # - Prevents some expensive overhead we don't need
+    ports:
+      - "4444:4444"            # - This is the port where you can access the selenium
+                               # dashboard
+      - "7900:7900"
+
     logging:
       driver: 'none'

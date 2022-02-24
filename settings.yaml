@@ -32,7 +32,7 @@ docker_compose:
   <<: *base
   test_options: &compose_options
     <<: *base_test_options
-    selenium_server: selenium-hub:4444
+    selenium_server: selenium:4444
 
 
 # Run with --settings-profile in_development to

@@ -31,16 +31,6 @@ def selenium_server(settings) -> str:
     return settings.test_options.selenium_server
 
 
-@pytest.fixture
-def browser(fresh_browser):
-    """
-    Override the default browser fixture so that a `session_browser`
-    instance is NOT created. We will only use fresh browsers in
-    this very edge-case-y suite.
-    """
-    return fresh_browser
-
-
 @pytest.fixture(scope='session')
 def settings(request) -> WebTestSettings:
     filename = request.config.getoption('--settings-file')
@@ -279,7 +269,6 @@ def get_fresh_browser(selenium_server, chrome_options, settings) -> Callable[...
     reuse a single chromedriver instance, which speeds things up a bit.
     """
     options = copy.deepcopy(chrome_options)
-    options.add_experimental_option('detach', True)  # See docstring above
     args = dict(options=options)
     if selenium_server and selenium_server.strip():
         browser_cls = Remote
