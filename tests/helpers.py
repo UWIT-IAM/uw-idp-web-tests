@@ -199,6 +199,7 @@ class ServiceProviderAWSOperations:
         changes = [
             AWSRoute53RecordSetChange(resource_record_set=AWSRoute53RecordSet(
                 name=self.service_providers[sp].domain,
+                ttl=60,
                 resource_records=[AWSRoute53ResourceRecord(value=self.service_providers[sp].public_ip)]
             ))
             for sp in service_providers
