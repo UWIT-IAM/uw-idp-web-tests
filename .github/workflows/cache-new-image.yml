@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-      - main
+      - mainline
       - run-cache-new-image-workflow
 
 jobs:
