@@ -11,7 +11,7 @@ from nslookup import Nslookup
 from selenium.webdriver.common.keys import Keys
 from typing_extensions import Literal
 from waiter import wait
-from webdriver_recorder.browser import Locator, SearchMethod
+from webdriver_recorder.browser import Locator, By
 
 from .models import ServiceProviderInstance, TestSecrets, WebTestSettings, HostedZoneSettings, \
     StartInstancesRequest, StopInstancesRequest, DescribeInstancesRequest, DescribeInstancesResponse, \
@@ -36,10 +36,10 @@ class Locators:
     """These are used to tell our test browser what DOM elements to look for. This is a convenient way to reuse
     elements across tests without having to redeclare them.
     """
-    submit_button = Locator(search_method=SearchMethod.ID, search_value='submit_button')
-    logout_button = Locator(search_method=SearchMethod.CSS_SELECTOR, search_value='input[value="Logout"]')
-    iframe = Locator(search_method=SearchMethod.ID, search_value='duo_iframe')
-    passcode_button = Locator(search_method=SearchMethod.ID, search_value='passcode')
+    submit_button = Locator(search_method=By.ID, search_value='submit_button')
+    logout_button = Locator(search_method=By.CSS_SELECTOR, search_value='input[value="Logout"]')
+    iframe = Locator(search_method=By.ID, search_value='duo_iframe')
+    passcode_button = Locator(search_method=By.ID, search_value='passcode')
 
 
 def lookup_domain_ip(domain: str):

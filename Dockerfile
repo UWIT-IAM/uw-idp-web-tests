@@ -1,14 +1,13 @@
-ARG SOURCE_TAG=latest
-ARG DI=dependency-image
-FROM ghcr.io/uwit-iam/poetry:${SOURCE_TAG} AS dependency-image
+FROM ghcr.io/uwit-iam/poetry:latest AS apt-base
 ENV ALLOW_HOSTS_MODIFICATION "1"
 RUN apt-get -y install curl jq dnsutils
 
-FROM $DI as poetry-di
+FROM apt-base as poetry-base
 WORKDIR /uw-idp-tests
-COPY poetry.lock pyproject.toml ./
+COPY poetry.lock pyproject.toml scripts/entrypoint.sh ./
 RUN poetry install
 
-FROM poetry-di AS uw-idp-web-tests
-COPY settings.yaml scripts/wait-for-selenium.sh ./
+FROM poetry-base AS test-runner
+COPY settings.yaml ./
 COPY tests/ ./tests
+ENTRYPOINT ["/uw-idp-tests/entrypoint.sh"]
