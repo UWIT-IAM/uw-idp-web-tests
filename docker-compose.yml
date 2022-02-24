@@ -15,7 +15,7 @@ services:
   # except for the "--report-dir," which is mounted to the host's working directory.
   # For more information on useful arguments, see docs/pytest.md.
   test-runner:
-    image: ghcr.io/uwit-iam/idp-web-tests:build
+    image: ghcr.io/uwit-iam/idp-web-tests:latest
     build:
       dockerfile: Dockerfile
       context: .

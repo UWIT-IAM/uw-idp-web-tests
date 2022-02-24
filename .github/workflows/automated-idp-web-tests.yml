@@ -81,6 +81,9 @@ jobs:
       run-tests-args: ${{ steps.configure.outputs.run-tests-args }}
     steps:
       - uses: actions/checkout@main
+      - if: github.event_name != 'pull_request'
+        id: args
+        run: echo "::set-output name=extra::--no-build"
 
       - id: configure
         env:
@@ -152,7 +155,7 @@ jobs:
 
         run: |
           exit_status=0
-          if ./scripts/run-tests.sh ${{ env.RUN_TESTS_ARGS }}
+          if ./scripts/run-tests.sh ${{ env.RUN_TESTS_ARGS }} ${{ steps.args.outputs.extra }}
           then
             echo "All tests succeeded for ${{ env.IDP_ENV }} succeeded! "
             test_status=succeeded

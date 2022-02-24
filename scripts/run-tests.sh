@@ -89,8 +89,10 @@ parse_args "$@" || exit 1
 if [[ -z "${NO_BUILD}" ]]
 then
   set -e
-  docker build --build-arg SOURCE_TAG -t ghcr.io/uwit-iam/idp-web-tests:build .
+  docker build --build-arg SOURCE_TAG -t ghcr.io/uwit-iam/idp-web-tests:latest .
   set +e
+else
+  docker pull ghcr.io/uwit-iam/idp-web-tests:latest
 fi
 
 function add_strict_host_override() {
