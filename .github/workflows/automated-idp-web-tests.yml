@@ -155,7 +155,7 @@ jobs:
 
         run: |
           exit_status=0
-          if ./scripts/run-tests.sh ${{ env.RUN_TESTS_ARGS }} ${{ steps.args.outputs.extra }}
+          if ./scripts/run-tests.sh ${{ steps.args.outputs.extra }} ${{ env.RUN_TESTS_ARGS }}
           then
             echo "All tests succeeded for ${{ env.IDP_ENV }} succeeded! "
             test_status=succeeded
