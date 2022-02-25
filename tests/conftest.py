@@ -56,8 +56,15 @@ def manage_test_service_providers(settings, utils):
     if not settings.test_options.skip_test_service_provider_start:
         logging.info("Starting all test service provider instances.")
         utils.sp_aws_operations.start_instances()
-        utils.sp_aws_operations.update_instance_a_records()
-        utils.sp_aws_operations.wait_for_ip_propagation()
+        record_sets = utils.sp_aws_operations.record_sets
+        service_providers = utils.sp_aws_operations.service_providers.keys()
+        service_providers = [
+            sp for sp in service_providers if
+            utils.sp_aws_operations.dns_record_requires_update(record_sets, sp)
+        ]
+        if service_providers:
+            utils.sp_aws_operations.update_instance_a_records(*service_providers)
+            utils.sp_aws_operations.wait_for_ip_propagation(*service_providers)
     else:
         logging.info("Service provider instances will be started as-needed.")
 

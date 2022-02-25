@@ -22,7 +22,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
         env:
-          tag: ${{ github.ref == 'refs/heads/main' && 'latest' || 'dry-run-latest' }}
+          tag: ${{ github.ref == 'refs/heads/mainline' && 'latest' || 'dry-run-latest' }}
         with:
           context: .
           push: true

@@ -51,8 +51,14 @@ def start(service_providers, settings_file, settings_env, dry_run):
                                       settings.aws_hosted_zone,
                                       utils)
     op.start_instances(*service_providers, dry_run=dry_run)
-    op.update_instance_a_records(*service_providers, dry_run=dry_run)
-    op.wait_for_ip_propagation(*service_providers, dry_run=dry_run)
+    record_sets = utils.sp_aws_operations.record_sets
+    outdated_dns_records = [
+        sp for sp in service_providers
+        if utils.sp_aws_operations.dns_record_requires_update(record_sets, sp)
+    ]
+    if outdated_dns_records:
+        op.update_instance_a_records(*outdated_dns_records, dry_run=dry_run)
+        op.wait_for_ip_propagation(*outdated_dns_records, dry_run=dry_run)
 
 
 @cli.command()
