@@ -125,6 +125,28 @@ class ServiceProviderAWSOperations:
                 sp_configs[ServiceProviderInstance(config.ref)] = config
         return sp_configs
 
+    def _get_record_sets(self):
+        client = self._get_lazy_cache_client('route53')
+        record_sets = client.list_resource_record_sets(
+            HostedZoneId=self._zone_settings.id,
+        )
+        record_sets = record_sets['ResourceRecordSets']
+        return record_sets
+
+    @property
+    def record_sets(self) -> List[Dict]:
+        return self._get_record_sets()
+
+    def dns_record_requires_update(self, record_sets, service_provider):
+        sp = self.service_providers[service_provider]
+        domain = self._utils.service_provider_domain(service_provider)
+
+        for record in record_sets:
+            record_domain = record['Name'][:-1]  # Records include a trailing '.'
+            if record_domain == domain and record['Type'] == 'A':
+                return record['ResourceRecords'][0]['Value'] != sp.public_ip
+        return True
+
     @property
     def ec2_client(self):
         return self._get_lazy_cache_client('ec2')
@@ -142,9 +164,19 @@ class ServiceProviderAWSOperations:
 
         Note that this does _not_ change DNS settings, only starts the instances. See "update_instance_a_record()."
         """
-        service_providers = service_providers or tuple(self.service_providers.keys())
+        service_providers = service_providers or tuple([
+            sp for sp in self.service_providers.keys() if not self.instance_is_started(sp)
+        ])
+        if not service_providers:
+            logger.info("All instances are already running. Nothing to do!")
+            return
         instance_ids = self._get_instance_ids(service_providers)
-        logger.info(f"Requesting start of instances: {instance_ids}")
+        instance_descriptors = [
+            f'{service_providers[index]} ({instance})'
+            for index, instance in enumerate(instance_ids)
+        ]
+        instance_descriptors = ', '.join(instance_descriptors)
+        logger.info(f"Requesting start of instances: {instance_descriptors}")
         with dry_runnable_operation(dry_run):
             self.ec2_client.start_instances(
                 **StartInstancesRequest(instance_ids=instance_ids, dry_run=dry_run).dict(by_alias=True))
@@ -236,7 +268,6 @@ class ServiceProviderAWSOperations:
         # We add wait_seconds to our TTL to account for edge cases with polling and TTL cycles.
         wait_timeout = self._zone_settings.ttl + wait_seconds
         for sp in service_providers:
-            instance = ServiceProviderInstance(sp)
             waiter = wait(wait_seconds, wait_timeout)
             # This winds up as something like diafine6.sandbox.iam.s.uw.edu
             domain = self.service_providers[sp].domain
