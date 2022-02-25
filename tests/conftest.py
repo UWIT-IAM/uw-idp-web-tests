@@ -60,14 +60,6 @@ def manage_test_service_providers(settings, utils):
         utils.sp_aws_operations.wait_for_ip_propagation()
     else:
         logging.info("Service provider instances will be started as-needed.")
-    try:
-        yield
-    finally:
-        if not settings.test_options.skip_test_service_provider_stop:
-            logging.info("Stopping all test service provider instances.")
-            utils.sp_aws_operations.stop_instances()
-        else:
-            logging.info("Leaving all active test service provider instances running.")
 
 
 @pytest.fixture(scope='session')
