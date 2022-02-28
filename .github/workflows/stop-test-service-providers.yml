@@ -1,0 +1,45 @@
+name: Turn off test service provider VMs
+
+on:
+  push:
+    branches:
+      - stop-test-service-providers
+  workflow_dispatch:  # Allows running from the Github Actions UI
+  schedule:
+    # The cron strings must be quoted!
+    # https://docs.github.com/en/actions/reference/events-that-trigger-workflows#schedule
+
+    # Do not change this without also changing automated-idp-web-tests.yml.
+    # This corresponds to 30 minutes after the tests start the servers,
+    # which gives tests more than enough time to complete.
+    # TODO: Find a better way of doing this! This is fine for now, but
+    #       there just has to be a cleaner solution.
+    - cron: '30 10 * * *'  # 3:30am PDT, 2:30am PST
+
+    # This can be updated any time; it's supposed to correspond roughly
+    # to the end of the workday. Maybe update it when the time changes
+    # so that it's always 5:30? (Low effort but probably unnecessary maintenance.)
+    - cron: '30 1 * * *'  # 6:30pm PDT, 5:30pm PST
+
+env:
+  AWS_DEFAULT_REGION: us-west-2  # Oregon; where EC2 instances are held
+
+jobs:
+  stop-service-providers:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/uwit-iam/idp-web-tests:latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    steps:
+    - uses: actions/checkout@v2
+    - uses: 'google-github-actions/auth@v0'
+      name: 'Authenticate to Google Cloud'
+      with:
+        credentials_json: ${{ secrets.TEST_RUNNER_GOOGLE_TOKEN }}
+    - name: 'Set up Cloud SDK'
+      uses: 'google-github-actions/setup-gcloud@v0'
+
+    - run: |
+        python -m tests.sp_manager stop

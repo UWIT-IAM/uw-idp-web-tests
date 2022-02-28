@@ -14,6 +14,7 @@ on:
   schedule:
     # The cron string must be quoted!
     # https://docs.github.com/en/actions/reference/events-that-trigger-workflows#schedule
+    # Do not change this without also changing stop-test-service-providers.yml
     - cron: '0 10 * * *'  # 3am PDT, 2am PST
 
   workflow_dispatch:
