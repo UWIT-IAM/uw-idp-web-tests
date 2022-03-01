@@ -1,8 +1,11 @@
+name: Re-build and upload a new image using given branch.
 on:
   push:
     branches:
       - mainline
       - run-cache-new-image-workflow
+  workflow_dispatch:  # Allows running from the Github Actions UI
+
 
 jobs:
   cache-new-image:
