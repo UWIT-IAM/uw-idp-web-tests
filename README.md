@@ -2,7 +2,7 @@
 
 Contains a test suite for UW's identity provider, using mock Shibboleth service providers.
 
-To run the tests from the Github UI, [start here](docs/running-from-github.md)
+To run the tests from the Github UI, [start here](docs/github-actions.md#run-the-tests).
 
 Other detailed information can be found in the [docs](docs) directory.
 
