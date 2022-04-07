@@ -1,5 +1,5 @@
 services:
-  chrome:
+  selenium:
     environment:
       EXTRA_HOST: ${EXTRA_HOST}
     extra_hosts:
