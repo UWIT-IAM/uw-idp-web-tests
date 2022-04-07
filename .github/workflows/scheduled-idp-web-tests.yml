@@ -1,0 +1,156 @@
+name: Scheduled UW IdP Test Matrix
+
+on:
+  push:
+    branches:
+      # You can test this workflow by pushing to this branch
+      - run-scheduled-idp-web-tests
+  schedule:
+    # The cron string must be quoted!
+    # https://docs.github.com/en/actions/reference/events-that-trigger-workflows#schedule
+    # Do not change this without also changing stop-test-service-providers.yml
+    - cron: '0 10 * * *'  # 3am PDT, 2am PST
+
+jobs:
+  run-web-tests:
+    strategy:
+      matrix:
+        include:
+          - idp_env: eval
+          - idp_env: prod
+      fail-fast: false  # Don't cancel prod tests if eval fails and vice versa
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      actions: write
+    env:
+      SLACK_BOT_TOKEN: ${{ secrets.ACTIONS_SLACK_BOT_TOKEN }}
+      ARTIFACT_BUCKET: ${{ secrets.IDENTITY_ARTIFACT_BUCKET }}
+    steps:
+      - uses: actions/checkout@v3
+      - id: config
+        run: |
+          set -x
+          timestamp=$(date "+%Y.%d.%m-%H.%m.%S")
+          storyboard_path="idp/schedule/${{ matrix.idp_env }}/${timestamp}"
+          report_dir="web-tests/${storyboard_path}"
+          echo ::set-output name=timestamp::${timestamp}
+          echo ::set-output name=storyboard_path::${storyboard_path}
+          echo ::set-output name=report_dir::${report_dir}
+          echo ::set-output name=storyboard_link::${storyboard_url}/${report_dir}/index.html
+          echo ::set-output name=workflow_link::${{ env.workflow_link }}
+        env:
+          storyboard_url: https://identity-artifact.iamdev.s.uw.edu/
+          workflow_link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+
+      - uses: UWIT-IAM/actions/configure-gcloud-docker@0.1
+        with:
+          gcloud-token: ${{ secrets.TEST_RUNNER_GOOGLE_TOKEN }}
+
+
+      - name: Initialize slack workflow canvas
+        env:
+          IDP_ENV: ${{ steps.configure.outputs.idp-env }}
+        with:
+          json: >
+            {
+              "channel": "#iam-bots",
+              "status": "in progress",
+              "description": "Scheduled ${{ matrix.idp_env }} IdP Web Tests",
+              "steps": [
+                {
+                  "description": "Run tests",
+                  "stepId": "run-tests",
+                  "status": "in progress"
+                },
+                {
+                  "description": "Upload test artifacts",
+                  "stepId": "upload-artifacts"
+                }
+              ]
+            }
+        uses: UWIT-IAM/actions/set-up-slack-notification-canvas@0.1
+        id: slack
+
+      - if: steps.slack.outputs.canvas-id
+        name: Add workflow link to slack notification
+        uses: UWIT-IAM/actions/update-slack-workflow-canvas@0.1
+        with:
+          command: add-artifact
+          description: "<${{ env.workflow_link }} | View Workflow>"
+        env:
+          workflow_link: ${{ steps.config.outputs.workflow_link }}
+
+
+      - name: Run tests
+        run: ./scripts/run-tests.sh -- --env ${{ matrix.idp_env }}
+        id: run
+
+      - name: Determine post-test actions
+        if: always()
+        run: |
+          if test -f webdriver-report/index.html
+          then
+            mkdir -pv ${{ steps.config.outputs.report_dir }}
+            cp -r webdriver-report/* ${{ steps.config.outputs.report_dir }}
+            echo ::set-output name=upload_storyboards::'true'
+          fi
+        id: post-run
+
+
+      - if: always() && steps.slack.outputs.canvas-id
+        env:
+          run_status: ${{ steps.run.outcome == 'success' && 'succeeded' || 'failed' }}
+          upload_status: ${{ steps.post-run.outputs.upload_storyboards == 'true' && 'in progress' || 'failed'}}
+        uses: UWIT-IAM/actions/update-slack-workflow-canvas@0.1
+        with:
+          step-id: run-tests, upload-artifacts
+          step-status: ${{ env.run_status }}, ${{ env.upload_status }}
+          command: update-workflow
+
+      - if: always() && steps.post-run.outputs.upload_storyboards == 'true'
+        name: Upload storyboards to identity-artifact
+        id: upload-storyboards
+        uses: google-github-actions/upload-cloud-storage@v0
+        with:
+          path: 'web-tests'
+          destination: ${{ secrets.IDENTITY_ARTIFACT_BUCKET }}
+
+      - if: >
+          always()
+          && steps.post-run.outputs.upload_storyboards =='true'
+          && steps.upload-storyboards.outcome == 'success'
+          && steps.slack.outputs.canvas-id
+        name: Add storyboard link to slack notification
+        id: add-storyboard-link-to-slack
+        uses: UWIT-IAM/actions/update-slack-workflow-canvas@0.1
+        with:
+          command: add-artifact
+          description: "<${{ steps.config.outputs.storyboard_link }} | View Storyboards>"
+
+      - if: >
+          always()
+          && steps.post-run.outputs.upload_storyboards =='true'
+          && steps.upload-storyboards.outcome == 'success'
+        name: Set notices on workflow
+        env:
+          storyboard_link: ${{ steps.config.outputs.storyboard_link }}
+        run: echo "::notice::Storyboards located at ${{ env.storyboard_link }}"
+
+      - if: >
+          always()
+          && steps.post-run.outputs.upload_storyboards == 'true'
+        uses: UWIT-IAM/actions/update-slack-workflow-canvas@0.1
+        env:
+          step_status: ${{ steps.upload-storyboards.outcome == 'success' && 'succeeded' || 'failed' }}
+        with:
+          command: update-workflow
+          step-id: upload-artifacts
+          step-status: ${{ env.step_status }}
+
+      - if: always() && steps.slack.outputs.canvas-id
+        uses: UWIT-IAM/actions/finalize-slack-notification-canvas@0.1
+        with:
+          workflow-status: ${{ job.status == 'success' && 'succeeded' || 'failed' }}
