@@ -11,12 +11,6 @@ on:
   pull_request:
     paths-ignore:
       - "*.md"  # No reason to run tests when only docs change
-  schedule:
-    # The cron string must be quoted!
-    # https://docs.github.com/en/actions/reference/events-that-trigger-workflows#schedule
-    # Do not change this without also changing stop-test-service-providers.yml
-    - cron: '0 10 * * *'  # 3am PDT, 2am PST
-
   workflow_dispatch:
     inputs:
       target-idp-env:
@@ -82,9 +76,6 @@ jobs:
       run-tests-args: ${{ steps.configure.outputs.run-tests-args }}
     steps:
       - uses: actions/checkout@main
-      - if: github.event_name != 'pull_request'
-        id: args
-        run: echo "::set-output name=extra::--no-build"
 
       - id: configure
         env:
