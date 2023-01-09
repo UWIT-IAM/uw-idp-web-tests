@@ -45,7 +45,7 @@ jobs:
           workflow_link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
 
-      - uses: UWIT-IAM/actions/configure-gcloud-docker@0.1
+      - uses: UWIT-IAM/actions/configure-gcloud-docker-gcloud-v101@0.1.17
         with:
           gcloud-token: ${{ secrets.TEST_RUNNER_GOOGLE_TOKEN }}
 
