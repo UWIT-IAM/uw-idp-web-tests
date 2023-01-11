@@ -158,8 +158,8 @@ jobs:
           fi
 
           # Only upload artifacts if the test suite actually ran.
-          echo "::set-output name=test-status::$test_status"
-          echo "::set-output name=upload-artifacts::true"
+          echo "test-status=$test_status" >> $GITHUB_OUTPUT
+          echo "upload-artifacts=true" >> $GITHUB_OUTPUT
           exit  $exit_status
 
         name: Run UW ${{ env.IDP_ENV }} IdP Web Tests

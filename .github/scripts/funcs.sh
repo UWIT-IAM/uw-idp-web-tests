@@ -46,5 +46,5 @@ function get-report-output-path() {
 function set-output() {
   local output_name="$1"
   local payload="$2"
-  echo "::set-output name=$output_name::$payload"
+  echo "$output_name=$payload" >> $GITHUB_OUTPUT
 }
