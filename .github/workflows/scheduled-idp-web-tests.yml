@@ -35,11 +35,11 @@ jobs:
           timestamp=$(date "+%Y.%d.%m-%H.%m.%S")
           storyboard_path="idp/schedule/${{ matrix.idp_env }}/${timestamp}"
           report_dir="web-tests/${storyboard_path}"
-          echo ::set-output name=timestamp::${timestamp}
-          echo ::set-output name=storyboard_path::${storyboard_path}
-          echo ::set-output name=report_dir::${report_dir}
-          echo ::set-output name=storyboard_link::${storyboard_url}/${report_dir}/index.html
-          echo ::set-output name=workflow_link::${{ env.workflow_link }}
+          echo timestamp=${timestamp} >> $GITHUB_OUTPUT
+          echo storyboard_path=${storyboard_path} >> $GITHUB_OUTPUT
+          echo report_dir=${report_dir} >> $GITHUB_OUTPUT
+          echo storyboard_link=${storyboard_url}/${report_dir}/index.html >> $GITHUB_OUTPUT
+          echo workflow_link=${{ env.workflow_link }} >> $GITHUB_OUTPUT
         env:
           storyboard_url: https://identity-artifact.iamdev.s.uw.edu/
           workflow_link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -95,7 +95,7 @@ jobs:
           then
             mkdir -pv ${{ steps.config.outputs.report_dir }}
             cp -r webdriver-report/* ${{ steps.config.outputs.report_dir }}
-            echo ::set-output name=upload_storyboards::'true'
+            echo upload_storyboards='true' >> $GITHUB_OUTPUT
           fi
         id: post-run
 
