@@ -74,6 +74,12 @@ jobs:
       idp-env: ${{ steps.configure.outputs.idp-env }}
       idp-host: ${{ steps.configure.outputs.idp-host }}
       run-tests-args: ${{ steps.configure.outputs.run-tests-args }}
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+      pull-requests: 'write'
+
     steps:
       - uses: actions/checkout@main
 
@@ -94,12 +100,16 @@ jobs:
         run: |
           echo "SLACK_CANVAS_ID=${{ steps.configure.outputs.workflow-id }}" >> $GITHUB_ENV
 
-      - uses: google-github-actions/setup-gcloud@v0.2.1
-        name: Set up gcloud CLI and credentials
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
         with:
-          project_id: ${{ secrets.IAM_GCR_REPO }}
-          service_account_key: ${{ secrets.TEST_RUNNER_GOOGLE_TOKEN }}
-          export_default_credentials: true
+          credentials_json: ${{ secrets.TEST_RUNNER_GOOGLE_TOKEN }}
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v1'
+        with:
+          version: '>= 363.0.0'
 
       - name: Initialize slack workflow canvas
         env:
@@ -183,7 +193,7 @@ jobs:
           path: web-tests
           destination: ${{ secrets.IDENTITY_ARTIFACT_BUCKET }}
         name: upload storyboards to identity-artifacts
-        uses: google-github-actions/upload-cloud-storage@v0.2.1
+        uses: google-github-actions/upload-cloud-storage@v1
 
       - if: ${{ always() && steps.run-tests.outputs.upload-artifacts == 'true' }}
         with:
