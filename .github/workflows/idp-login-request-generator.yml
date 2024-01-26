@@ -34,13 +34,16 @@ jobs:
           - runner-id: 6
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
       - id: 'auth'
-        uses: 'google-github-actions/auth@v0'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
         with:
-          credentials_json: '${{ secrets.TEST_RUNNER_GOOGLE_TOKEN }}'
+          credentials_json: ${{ secrets.TEST_RUNNER_GOOGLE_TOKEN }}
+
       - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v0'
+        uses: 'google-github-actions/setup-gcloud@v1'
+        with:
+          version: '>= 363.0.0'
       - env:
           load_balancer: ${{ github.event.inputs.load-balancer-ip }}
           num_loops: ${{ github.event.inputs.num-login-attempts }}

@@ -34,12 +34,16 @@ jobs:
       id-token: 'write'
     steps:
     - uses: actions/checkout@v2
-    - uses: 'google-github-actions/auth@v0'
-      name: 'Authenticate to Google Cloud'
-      with:
-        credentials_json: ${{ secrets.TEST_RUNNER_GOOGLE_TOKEN }}
-    - name: 'Set up Cloud SDK'
-      uses: 'google-github-actions/setup-gcloud@v0'
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: ${{ secrets.TEST_RUNNER_GOOGLE_TOKEN }}
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v1'
+        with:
+          version: '>= 363.0.0'
 
     - run: |
         python -m tests.sp_manager stop
