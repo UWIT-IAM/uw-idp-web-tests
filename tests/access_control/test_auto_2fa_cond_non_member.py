@@ -1,7 +1,13 @@
 import pytest
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 from tests.access_control import AccessControlTestBase
+from tests.helpers import Locators
 from tests.models import ServiceProviderInstance
+default_password = "IDPtestsR!fun"
+passcode = "377682022"
 
 
 class TestAuto2faCondAccessNonMember(AccessControlTestBase):
@@ -18,6 +24,7 @@ class TestAuto2faCondAccessNonMember(AccessControlTestBase):
             self.browser.get(self.sp_shib_url(sp))
             self.log_in_netid(self.browser, self.netid, assert_success=False)
             self.enter_duo_passcode(self.browser, assert_success=False)
+            self.browser.switch_to.default_content()
             self.browser.wait_for_tag('p', 'You are not authorized to access the application:')
 
     def test_b(self):
@@ -33,6 +40,7 @@ class TestAuto2faCondAccessNonMember(AccessControlTestBase):
         with self.utils.using_test_sp(sp):
             self.browser.get(self.sp_shib_url(sp))
             self.enter_duo_passcode(self.browser, assert_success=False)
+            self.browser.switch_to.default_content()
             self.browser.wait_for_tag('p', 'You are not authorized to access the application:')
 
     def test_c(self):
@@ -49,6 +57,7 @@ class TestAuto2faCondAccessNonMember(AccessControlTestBase):
             self.browser.get(self.sp_shib_url(sp, append='force'))
             self.log_in_netid(self.browser, self.netid, assert_success=False)
             self.enter_duo_passcode(self.browser, assert_success=False)
+            self.browser.switch_to.default_content()
             self.browser.wait_for_tag('p', 'You are not authorized to access the application:')
 
     def test_d(self):
@@ -64,6 +73,7 @@ class TestAuto2faCondAccessNonMember(AccessControlTestBase):
         sp = ServiceProviderInstance.diafine10
         with self.utils.using_test_sp(sp):
             self.browser.get(self.sp_shib_url(sp, append='mfa'))
+            self.browser.switch_to.default_content()
             self.browser.wait_for_tag('p', 'You are not authorized to access the application:')
 
     def test_e(self):
@@ -81,6 +91,7 @@ class TestAuto2faCondAccessNonMember(AccessControlTestBase):
             self.browser.get(self.sp_shib_url(sp, append='mfaforce'))
             self.log_in_netid(self.browser, self.netid, assert_success=False)
             self.enter_duo_passcode(self.browser, assert_success=False)
+            self.browser.switch_to.default_content()
             self.browser.wait_for_tag('p', 'You are not authorized to access the application:')
 
     def test_f(self):
@@ -92,4 +103,5 @@ class TestAuto2faCondAccessNonMember(AccessControlTestBase):
             self.browser.get(self.sp_shib_url(sp, append='mfa'))
             self.log_in_netid(self.browser, self.netid, assert_success=False)
             self.enter_duo_passcode(self.browser, assert_success=False)
+            self.browser.switch_to.default_content()
             self.browser.wait_for_tag('p', 'You are not authorized to access the application:')
