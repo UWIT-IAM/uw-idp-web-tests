@@ -1,14 +1,7 @@
 import pytest
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
 from tests.access_control import AccessControlTestBase
-from tests.helpers import Locators
 from tests.models import ServiceProviderInstance
-default_password = "IDPtestsR!fun"
-passcode = "377682022"
-
 
 class TestAuto2faCondAccessNonMember(AccessControlTestBase):
     @pytest.fixture(autouse=True)
