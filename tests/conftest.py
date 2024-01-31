@@ -168,7 +168,7 @@ def netid10() -> str:
 
 
 @pytest.fixture
-def enter_duo_passcode(secrets, sp_domain) -> Callable[..., NoReturn]:
+def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
     default_passcode = secrets.test_accounts.duo_code.get_secret_value()
 
     def inner(
@@ -207,7 +207,22 @@ def enter_duo_passcode(secrets, sp_domain) -> Callable[..., NoReturn]:
         if assert_failure is None:
             assert_failure = not passcode_matches_default
 
-        if select_iframe:
+        if select_iframe and test_env == 'prod':
+            current_browser.wait_for_tag('p', 'Use your 2FA device.')
+            iframe = current_browser.wait_for(Locators.iframe)
+            current_browser.switch_to.frame(iframe)
+            current_browser.wait_for(Locators.passcode_button)
+            current_browser.execute_script("document.getElementById('passcode').click();")
+
+        if test_env == 'prod':
+            current_browser.execute_script(
+                "document.getElementsByClassName('passcode-input')[0].value = arguments[0];",
+                passcode
+            )
+            current_browser.snap()
+            current_browser.execute_script("document.getElementById('passcode').click();")
+
+        if select_iframe and test_env == 'eval':
             current_browser.wait_for_tag('a', 'Other options').click()
             current_browser.wait_for_tag('b', 'Other options to log in')
             wait = WebDriverWait(current_browser, 10)
@@ -216,17 +231,21 @@ def enter_duo_passcode(secrets, sp_domain) -> Callable[..., NoReturn]:
                                                              "@class, 'row') and contains(@class, 'display-flex') ]")))
             # Click the element
             element.click()
-            current_browser.send_inputs(passcode)
-            current_browser.snap()
-            current_browser.wait_for_tag('button', 'Verify').click()
+        current_browser.send_inputs(passcode)
+        current_browser.snap()
+        current_browser.wait_for_tag('button', 'Verify').click()
 
         current_browser.snap()
 
         if assert_success:
+            if test_env == 'prod':
+                current_browser.switch_to.default_content()
             sp = sp_domain(match_service_provider) if match_service_provider else ''
             current_browser.wait_for_tag('h2', f'{sp} sign-in success!')
         elif assert_failure:
-            current_browser.wait_for_tag('span', 'Incorrect passcode. Enter a passcode from Duo Mobile.')
+            wait = WebDriverWait(current_browser, 10)
+            wait.until(EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), 'Invalid passcode.')]")))
+            # current_browser.wait_for_tag('span', 'Invalid passcode.')
 
     return inner
 

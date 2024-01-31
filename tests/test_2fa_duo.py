@@ -33,10 +33,11 @@ class TestNew2FASessionAndExisting2FASession:
     """
 
     @pytest.fixture(autouse=True)
-    def initialize(self, utils, sp_domain, sp_shib_url):
+    def initialize(self, utils, sp_domain, sp_shib_url, test_env):
         self.utils = utils
         self.sp_domain = sp_domain
         self.sp_shib_url = sp_shib_url
+        self.test_env = test_env
 
     def test_2fa_signin(self, secrets, netid3, enter_duo_passcode, log_in_netid):
         """

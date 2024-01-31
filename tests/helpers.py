@@ -39,10 +39,7 @@ class Locators:
     submit_button = Locator(search_method=By.ID, search_value='submit_button')
     logout_button = Locator(search_method=By.CSS_SELECTOR, search_value='input[value="Logout"]')
     iframe = Locator(search_method=By.ID, search_value='duo_iframe')
-    passcode_button = Locator(search_method=By.CSS_SELECTOR,
-                              search_value='div.row.display-flex.method-label[value="Bypass code"]')
-    # passcode_button = Locator(search_method=By.CSS_SELECTOR, search_value='div[value="Bypass code"]')
-    # <div class="row display-flex method-label">Bypass code</div>
+    passcode_button = Locator(search_method=By.ID, search_value='passcode')
 
 
 def lookup_domain_ip(domain: str):
