@@ -1,5 +1,9 @@
 import copy
 import logging
+
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from typing import Callable, NoReturn, Optional
 
 import pytest
@@ -204,21 +208,21 @@ def enter_duo_passcode(secrets, sp_domain) -> Callable[..., NoReturn]:
             assert_failure = not passcode_matches_default
 
         if select_iframe:
-            current_browser.wait_for_tag('p', 'Use your 2FA device.')
-            iframe = current_browser.wait_for(Locators.iframe)
-            current_browser.switch_to.frame(iframe)
-            current_browser.wait_for(Locators.passcode_button)
-            current_browser.execute_script("document.getElementById('passcode').click();")
+            current_browser.wait_for_tag('a', 'Other options').click()
+            current_browser.wait_for_tag('b', 'Other options to log in')
+            wait = WebDriverWait(current_browser, 10)
+            element = wait.until(EC.element_to_be_clickable((By.XPATH,
+                                                             "//div[contains(text(), 'Bypass code') and contains("
+                                                             "@class, 'row') and contains(@class, 'display-flex') ]")))
+            # Click the element
+            element.click()
+            current_browser.send_inputs(passcode)
+            current_browser.snap()
+            current_browser.wait_for_tag('button', 'Verify').click()
 
-        current_browser.execute_script(
-            "document.getElementsByClassName('passcode-input')[0].value = arguments[0];",
-            passcode
-        )
         current_browser.snap()
-        current_browser.execute_script("document.getElementById('passcode').click();")
 
         if assert_success:
-            current_browser.switch_to.default_content()
             sp = sp_domain(match_service_provider) if match_service_provider else ''
             current_browser.wait_for_tag('h2', f'{sp} sign-in success!')
         elif assert_failure:
