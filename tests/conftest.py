@@ -170,87 +170,6 @@ def netid10() -> str:
 
 
 @pytest.fixture
-def enter_duo_passcode_2(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
-    default_passcode = secrets.test_accounts.duo_code.get_secret_value()
-
-    def inner(
-            current_browser: Chrome,
-            passcode: str = default_passcode,
-            select_iframe: bool = True,
-            assert_success: Optional[bool] = None,
-            assert_failure: Optional[bool] = None,
-            match_service_provider: Optional[ServiceProviderInstance] = None,
-    ):
-        """
-        :param current_browser: The browser you want to invoke these actions on.
-        :param passcode: The passcode you want to enter; if not provided, will use the
-            correct test instance passcode.
-        :param select_iframe: Defaults to True;
-                              you can toggle this to False if you are already in an iframe context.
-        :param assert_success: Optional. Will ensure that the result was a successful
-                               sign in attempt. If not overridden, will default to True
-                               if the passcode being entered is the correct passcode.
-        :param assert_failure: Optional. Will ensure that the result was a failed
-                               sign in attempt. If not overridden with a bool, will
-                               default to True if the passcode being entered is
-                               not the correct passcode.
-        :param match_service_provider: Optional[ServiceProviderInstance]:
-                                 The SP you expect to find in the 'assert_success'
-                                 case output. If not provided, only the generic success
-                                 message will be matched.
-                                 (Providing this gives your tests a higher confidence.)
-        """
-
-        passcode_matches_default = passcode == default_passcode
-
-        if assert_success is None:
-            assert_success = passcode_matches_default
-
-        if assert_failure is None:
-            assert_failure = not passcode_matches_default
-
-        wait = WebDriverWait(current_browser, 10)
-        print('1')
-
-        if test_env == 'prod':
-            current_browser.execute_script(
-                "document.getElementsByClassName('passcode-input')[0].value = arguments[0];",
-                passcode
-            )
-            current_browser.snap()
-            current_browser.execute_script("document.getElementById('passcode').click();")
-            sleep(5)
-
-        else:
-            element = wait.until(EC.element_to_be_clickable((By.XPATH,
-                                                             "//input[contains(@id, 'passcode-input')]")))
-            print('1_a')
-            current_browser.snap()
-            print(f'_input value--------------->{element.get_attribute("value")}')
-            # Click the element
-            element.click()
-            current_browser.execute_script("arguments[0].value = '';", element)
-            current_browser.snap()
-            current_browser.send_inputs(passcode)
-            print('2_')
-            current_browser.snap()
-            current_browser.wait_for_tag('button', 'Verify').click()
-
-            current_browser.snap()
-
-        if assert_success:
-            if test_env == 'prod':
-                current_browser.switch_to.default_content()
-            sp = sp_domain(match_service_provider) if match_service_provider else ''
-            current_browser.wait_for_tag('h2', f'{sp} sign-in success!')
-        elif assert_failure:
-            wait = WebDriverWait(current_browser, 10)
-            wait.until(EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), 'Invalid passcode.')]")))
-
-    return inner
-
-
-@pytest.fixture
 def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
     default_passcode = secrets.test_accounts.duo_code.get_secret_value()
 
@@ -261,6 +180,7 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
             assert_success: Optional[bool] = None,
             assert_failure: Optional[bool] = None,
             match_service_provider: Optional[ServiceProviderInstance] = None,
+            retry: Optional[bool] = False
     ):
         """
         :param current_browser: The browser you want to invoke these actions on.
@@ -280,6 +200,8 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
                                  case output. If not provided, only the generic success
                                  message will be matched.
                                  (Providing this gives your tests a higher confidence.)
+        :param retry: Optional. Tells the function if we are retrying the passcode after entering one that does
+                                not match.
         """
 
         passcode_matches_default = passcode == default_passcode
@@ -312,19 +234,24 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
 
         if test_env == 'eval':
             wait = WebDriverWait(current_browser, 10)
-            print('1')
-            element = wait.until(EC.visibility_of_element_located((By.XPATH, "//div[contains(text(), 'Bypass code') and "
-                                                                             "contains( "
-                                                                   "@class, 'row') and contains(@class, 'display-flex') ]"))
+            if assert_success and retry:
+                element = wait.until(EC.element_to_be_clickable((By.XPATH,
+                                                                 "//input[contains(@id, 'passcode-input')]")))
+            else:
+                element = wait.until(EC.visibility_of_element_located((By.XPATH, "//div[contains(text(), 'Bypass code') "
+                                                                                 "and "
+                                                                                 "contains( "
+                                                                       "@class, 'row') and contains(@class, "
+                                                                                 "'display-flex') ]"))
                                  )
-            print('1a')
             current_browser.snap()
-            # print(f'input value--------------->{element.get_attribute("value")}')
-                # Click the element
             element.click()
             current_browser.snap()
+            if assert_success and retry:
+                current_browser.execute_script("arguments[0].value = '';", element)
+                current_browser.snap()
             current_browser.send_inputs(passcode)
-            print('2')
+            current_browser.snap()
             current_browser.snap()
             current_browser.wait_for_tag('button', 'Verify').click()
 
@@ -336,9 +263,8 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
             sp = sp_domain(match_service_provider) if match_service_provider else ''
             current_browser.wait_for_tag('h2', f'{sp} sign-in success!')
         elif assert_failure:
-            wait = WebDriverWait(current_browser, 10)
             if test_env == 'eval':
-                wait.until(EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), 'Invalid passcode.')]")))
+                current_browser.wait_for_tag('span', 'Invalid passcode')
             else:
                 current_browser.wait_for_tag('span', 'Incorrect passcode. Enter a passcode from Duo Mobile.')
 

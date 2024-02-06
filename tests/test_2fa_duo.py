@@ -5,13 +5,10 @@ https://wiki.cac.washington.edu/display/SMW/IAM+Team+Wiki
 
 2FA-1 thru 2FA-11. 2FA-8b and 2FA-10 are not yet automatable.
 """
-from selenium.webdriver.support.wait import WebDriverWait
 from webdriver_recorder.browser import Chrome
 from tests.helpers import Locators
 from tests.models import ServiceProviderInstance
 import pytest
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
 
 
 def test_new_session_no_duo(utils, sp_url, sp_domain, secrets, netid, test_env, fresh_browser, sp_shib_url):
@@ -94,8 +91,7 @@ class TestNew2FASessionAndForcedReAuth:
             self.enter_duo_passcode(self.browser,
                                     passcode=passcode,
                                     assert_failure=True)
-            print('a')
-            self.enter_duo_passcode_2(self.browser, select_iframe=False, match_service_provider=sp, assert_success=True)
+            self.enter_duo_passcode(self.browser, select_iframe=False, match_service_provider=sp, assert_success=True, retry=True)
 
     def test_forced_reauth_2fa(self):
         """2 FA-5 SSO to new forced reauth 2FA SP with an existing 2FA session"""
