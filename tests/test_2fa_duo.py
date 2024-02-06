@@ -33,10 +33,11 @@ class TestNew2FASessionAndExisting2FASession:
     """
 
     @pytest.fixture(autouse=True)
-    def initialize(self, utils, sp_domain, sp_shib_url):
+    def initialize(self, utils, sp_domain, sp_shib_url, test_env):
         self.utils = utils
         self.sp_domain = sp_domain
         self.sp_shib_url = sp_shib_url
+        self.test_env = test_env
 
     def test_2fa_signin(self, secrets, netid3, enter_duo_passcode, log_in_netid):
         """
@@ -89,10 +90,7 @@ class TestNew2FASessionAndForcedReAuth:
             self.enter_duo_passcode(self.browser,
                                     passcode=passcode,
                                     assert_failure=True)
-            self.enter_duo_passcode(self.browser,
-                                    select_iframe=False,
-                                    match_service_provider=sp,
-                                    assert_success=True)
+            self.enter_duo_passcode(self.browser, select_duo_push=False, match_service_provider=sp, assert_success=True, retry=True)
 
     def test_forced_reauth_2fa(self):
         """2 FA-5 SSO to new forced reauth 2FA SP with an existing 2FA session"""
@@ -144,6 +142,7 @@ class Test2FASessionCRNs:
         self.sp = ServiceProviderInstance.diafine6
         self.shib_mfa_url = sp_shib_url(self.sp, append='mfa')
 
+    @pytest.mark.usefixtures('skip_if_eval')
     def test_2fa_session_single_crn(self, netid2, enter_duo_passcode):
         """
         2FA-8 part a. 2FA session using an acct with a Single CRN.
@@ -156,6 +155,7 @@ class Test2FASessionCRNs:
             self.browser.wait_for_tag('p', "Using your 'sptest03' Duo identity.")
             enter_duo_passcode(self.browser, match_service_provider=self.sp)
 
+    @pytest.mark.usefixtures('skip_if_eval')
     def test_2fa_session_multiple_crn(self, netid10, enter_duo_passcode):
         """
         2FA-8 part b. 2FA session using an acct with multiple CRNs.
@@ -173,11 +173,14 @@ class Test2FASessionCRNs:
             enter_duo_passcode(self.browser, match_service_provider=self.sp)
 
 
+@pytest.mark.usefixtures('skip_if_eval')
 def test_remember_me_cookie(
         utils, sp_shib_url, sp_url, log_in_netid,
         sp_domain, secrets, netid3, test_env, fresh_browser, enter_duo_passcode):
     """
     2FA-9 Remember me cookie
+
+    Only runs when running tests against prod, for now. Eval does not yet support the uw-rememberme cookie.
     """
     password = secrets.test_accounts.password.get_secret_value()
 
@@ -220,10 +223,13 @@ def test_remember_me_cookie(
         log_in_netid(fresh_browser, netid3, match_service_provider=sp)
 
 
+@pytest.mark.usefixtures('skip_if_eval')
 def test_forget_me_self_service(utils, sp_url, sp_domain, secrets, netid3, test_env, enter_duo_passcode,
                                 fresh_browser, sp_shib_url):
     """
     2FA-11 Forget me (self-service)
+
+    Only runs when running tests against prod, for now. Eval does not yet support the uw-rememberme cookie.
     """
     idp_env = ''
     if test_env == "eval":

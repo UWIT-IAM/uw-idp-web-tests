@@ -1,5 +1,11 @@
+from time import sleep
+
 import copy
 import logging
+
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from typing import Callable, NoReturn, Optional
 
 import pytest
@@ -164,23 +170,29 @@ def netid10() -> str:
 
 
 @pytest.fixture
-def enter_duo_passcode(secrets, sp_domain) -> Callable[..., NoReturn]:
+def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
     default_passcode = secrets.test_accounts.duo_code.get_secret_value()
 
     def inner(
             current_browser: Chrome,
             passcode: str = default_passcode,
-            select_iframe: bool = True,
+            select_duo_push: bool = True,
             assert_success: Optional[bool] = None,
             assert_failure: Optional[bool] = None,
             match_service_provider: Optional[ServiceProviderInstance] = None,
+            retry: Optional[bool] = False
     ):
         """
         :param current_browser: The browser you want to invoke these actions on.
         :param passcode: The passcode you want to enter; if not provided, will use the
             correct test instance passcode.
-        :param select_iframe: Defaults to True;
-                              you can toggle this to False if you are already in an iframe context.
+        :param select_duo_push: Defaults to True;
+                              you can toggle this to False if you are already in the duo push context.
+                              This was formerly known as select_iframe, but the iframe is being phased out.
+                              When select_duo_push is true, eval will find the path to the bypass code option. Prod will
+                              find the path to the duo iframe and then to the bypass code option. If we just need to
+                              re-enter/retry the bypass code, we are already at the bypass code field and don't need
+                              to find it again from scratch, and in those cases, we set select_duo_push to false.
         :param assert_success: Optional. Will ensure that the result was a successful
                                sign in attempt. If not overridden, will default to True
                                if the passcode being entered is the correct passcode.
@@ -193,6 +205,8 @@ def enter_duo_passcode(secrets, sp_domain) -> Callable[..., NoReturn]:
                                  case output. If not provided, only the generic success
                                  message will be matched.
                                  (Providing this gives your tests a higher confidence.)
+        :param retry: Optional. Tells the function if we are retrying the passcode after entering one that does
+                                not match.
         """
 
         passcode_matches_default = passcode == default_passcode
@@ -203,26 +217,63 @@ def enter_duo_passcode(secrets, sp_domain) -> Callable[..., NoReturn]:
         if assert_failure is None:
             assert_failure = not passcode_matches_default
 
-        if select_iframe:
+        if select_duo_push and test_env == 'prod':
             current_browser.wait_for_tag('p', 'Use your 2FA device.')
             iframe = current_browser.wait_for(Locators.iframe)
             current_browser.switch_to.frame(iframe)
             current_browser.wait_for(Locators.passcode_button)
             current_browser.execute_script("document.getElementById('passcode').click();")
 
-        current_browser.execute_script(
-            "document.getElementsByClassName('passcode-input')[0].value = arguments[0];",
-            passcode
-        )
-        current_browser.snap()
-        current_browser.execute_script("document.getElementById('passcode').click();")
+        if test_env == 'prod':
+            current_browser.execute_script(
+                "document.getElementsByClassName('passcode-input')[0].value = arguments[0];",
+                passcode
+            )
+            current_browser.snap()
+            current_browser.execute_script("document.getElementById('passcode').click();")
+            sleep(5)
+
+        if select_duo_push and test_env == 'eval':
+            wait = WebDriverWait(current_browser, 10)
+            wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(text(), 'Other options')]")))
+            current_browser.wait_for_tag('a', 'Other options').click()
+            current_browser.wait_for_tag('b', 'Other options to log in')
+
+        if test_env == 'eval':
+            wait = WebDriverWait(current_browser, 10)
+            if assert_success and retry:
+                element = wait.until(EC.element_to_be_clickable((By.XPATH,
+                                                                 "//input[contains(@id, 'passcode-input')]")))
+            else:
+                element = wait.until(EC.visibility_of_element_located((By.XPATH, "//div[contains(text(), 'Bypass code') "
+                                                                                 "and "
+                                                                                 "contains( "
+                                                                       "@class, 'row') and contains(@class, "
+                                                                                 "'display-flex') ]"))
+                                 )
+            current_browser.snap()
+            element.click()
+            current_browser.snap()
+            if assert_success and retry:
+                current_browser.execute_script("arguments[0].value = '';", element)
+                current_browser.snap()
+            current_browser.send_inputs(passcode)
+            current_browser.snap()
+            current_browser.snap()
+            current_browser.wait_for_tag('button', 'Verify').click()
+
+            current_browser.snap()
 
         if assert_success:
-            current_browser.switch_to.default_content()
+            if test_env == 'prod':
+                current_browser.switch_to.default_content()
             sp = sp_domain(match_service_provider) if match_service_provider else ''
             current_browser.wait_for_tag('h2', f'{sp} sign-in success!')
         elif assert_failure:
-            current_browser.wait_for_tag('span', 'Incorrect passcode. Enter a passcode from Duo Mobile.')
+            if test_env == 'eval':
+                current_browser.wait_for_tag('span', 'Invalid passcode')
+            else:
+                current_browser.wait_for_tag('span', 'Incorrect passcode. Enter a passcode from Duo Mobile.')
 
     return inner
 
@@ -295,3 +346,9 @@ def fresh_browser(get_fresh_browser):
         yield browser
     finally:
         browser.quit()
+
+
+@pytest.fixture()
+def skip_if_eval(test_env):
+    if test_env == 'eval':
+        pytest.skip(msg='skipped test, we are in eval.')

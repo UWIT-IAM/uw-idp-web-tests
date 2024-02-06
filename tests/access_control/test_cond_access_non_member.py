@@ -86,4 +86,5 @@ class TestCondAccessNonMember(AccessControlTestBase):
             self.browser.get(self.sp_shib_url(sp, append='mfaforce'))
             self.log_in_netid(self.browser, self.netid, assert_success=False)
             self.enter_duo_passcode(self.browser, assert_success=False)
+            self.browser.switch_to.default_content()
             self.browser.wait_for_tag('p', 'You are not authorized to access the application:')
