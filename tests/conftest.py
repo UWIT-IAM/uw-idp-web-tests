@@ -234,6 +234,8 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
             sleep(5)
 
         if select_duo_push and test_env == 'eval':
+            wait = WebDriverWait(current_browser, 10)
+            wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(text(), 'Other options')]")))
             current_browser.wait_for_tag('a', 'Other options').click()
             current_browser.wait_for_tag('b', 'Other options to log in')
 
