@@ -69,7 +69,7 @@ class TestNew2FASessionAndForcedReAuth:
     browser: Chrome
 
     @pytest.fixture(autouse=True)
-    def initialize(self, utils, sp_shib_url, sp_domain, secrets, netid3, test_env, enter_duo_passcode, enter_duo_passcode_2):
+    def initialize(self, utils, sp_shib_url, sp_domain, secrets, netid3, test_env, enter_duo_passcode):
         self.utils = utils
         self.sp_shib_url = sp_shib_url
         self.sp_domain = sp_domain
@@ -77,7 +77,6 @@ class TestNew2FASessionAndForcedReAuth:
         self.password = secrets.test_accounts.password.get_secret_value()
         self.test_env = test_env
         self.enter_duo_passcode = enter_duo_passcode
-        self.enter_duo_passcode_2 = enter_duo_passcode_2
 
     def test_new_session_2fa_invalid_token_retry(self, log_in_netid):
         """
@@ -91,7 +90,7 @@ class TestNew2FASessionAndForcedReAuth:
             self.enter_duo_passcode(self.browser,
                                     passcode=passcode,
                                     assert_failure=True)
-            self.enter_duo_passcode(self.browser, select_iframe=False, match_service_provider=sp, assert_success=True, retry=True)
+            self.enter_duo_passcode(self.browser, select_duo_push=False, match_service_provider=sp, assert_success=True, retry=True)
 
     def test_forced_reauth_2fa(self):
         """2 FA-5 SSO to new forced reauth 2FA SP with an existing 2FA session"""

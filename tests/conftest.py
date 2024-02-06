@@ -176,7 +176,7 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
     def inner(
             current_browser: Chrome,
             passcode: str = default_passcode,
-            select_iframe: bool = True,
+            select_duo_push: bool = True,
             assert_success: Optional[bool] = None,
             assert_failure: Optional[bool] = None,
             match_service_provider: Optional[ServiceProviderInstance] = None,
@@ -186,8 +186,13 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
         :param current_browser: The browser you want to invoke these actions on.
         :param passcode: The passcode you want to enter; if not provided, will use the
             correct test instance passcode.
-        :param select_iframe: Defaults to True;
-                              you can toggle this to False if you are already in an iframe context.
+        :param select_duo_push: Defaults to True;
+                              you can toggle this to False if you are already in the duo push context.
+                              This was formerly known as select_iframe, but the iframe is being phased out.
+                              When select_duo_push is true, eval will find the path to the bypass code option. Prod will
+                              find the path to the duo iframe and then to the bypass code option. If we just need to
+                              re-enter/retry the bypass code, we are already at the bypass code field and don't need
+                              to find it again from scratch, and in those cases, we set select_duo_push to false.
         :param assert_success: Optional. Will ensure that the result was a successful
                                sign in attempt. If not overridden, will default to True
                                if the passcode being entered is the correct passcode.
@@ -212,7 +217,7 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
         if assert_failure is None:
             assert_failure = not passcode_matches_default
 
-        if select_iframe and test_env == 'prod':
+        if select_duo_push and test_env == 'prod':
             current_browser.wait_for_tag('p', 'Use your 2FA device.')
             iframe = current_browser.wait_for(Locators.iframe)
             current_browser.switch_to.frame(iframe)
@@ -228,7 +233,7 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
             current_browser.execute_script("document.getElementById('passcode').click();")
             sleep(5)
 
-        if select_iframe and test_env == 'eval':
+        if select_duo_push and test_env == 'eval':
             current_browser.wait_for_tag('a', 'Other options').click()
             current_browser.wait_for_tag('b', 'Other options to log in')
 
