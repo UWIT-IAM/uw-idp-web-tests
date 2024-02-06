@@ -142,6 +142,7 @@ class Test2FASessionCRNs:
         self.sp = ServiceProviderInstance.diafine6
         self.shib_mfa_url = sp_shib_url(self.sp, append='mfa')
 
+    @pytest.mark.usefixtures('skip_if_eval')
     def test_2fa_session_single_crn(self, netid2, enter_duo_passcode):
         """
         2FA-8 part a. 2FA session using an acct with a Single CRN.
@@ -154,6 +155,7 @@ class Test2FASessionCRNs:
             self.browser.wait_for_tag('p', "Using your 'sptest03' Duo identity.")
             enter_duo_passcode(self.browser, match_service_provider=self.sp)
 
+    @pytest.mark.usefixtures('skip_if_eval')
     def test_2fa_session_multiple_crn(self, netid10, enter_duo_passcode):
         """
         2FA-8 part b. 2FA session using an acct with multiple CRNs.
