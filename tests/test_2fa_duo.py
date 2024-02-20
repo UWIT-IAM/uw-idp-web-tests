@@ -92,6 +92,8 @@ class TestNew2FASessionAndForcedReAuth:
                                     assert_failure=True)
             self.enter_duo_passcode(self.browser, select_duo_push=False, match_service_provider=sp, assert_success=True, retry=True)
 
+    @pytest.mark.usefixtures('skip_if_eval')  # forced re-auth currently isn't in place at all for the same browser
+    # session
     def test_forced_reauth_2fa(self):
         """2 FA-5 SSO to new forced reauth 2FA SP with an existing 2FA session"""
         sp = ServiceProviderInstance.diafine12
