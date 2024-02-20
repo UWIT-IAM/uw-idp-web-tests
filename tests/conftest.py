@@ -238,39 +238,61 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
             wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(text(), 'Other options')]")))
             current_browser.wait_for_tag('a', 'Other options').click()
             current_browser.wait_for_tag('b', 'Other options to log in')
+            print('select_duo_push and test_env == eval')
 
         if test_env == 'eval':
             wait = WebDriverWait(current_browser, 10)
             if assert_success and retry:
+                print('eval, assert_success, retry')
                 element = wait.until(EC.element_to_be_clickable((By.XPATH,
                                                                  "//input[contains(@id, 'passcode-input')]")))
             else:
-                element = wait.until(EC.visibility_of_element_located((By.XPATH, "//div[contains(text(), 'Bypass code') "
-                                                                                 "and "
-                                                                                 "contains( "
-                                                                       "@class, 'row') and contains(@class, "
-                                                                                 "'display-flex') ]"))
-                                 )
+                print('not eval, assert_success, retry')
+                element = wait.until(EC.visibility_of_element_located((By.XPATH,
+                                                                       "//div[contains(text(), 'Bypass code') and "
+                                                                       "contains(@class, 'row') and contains(@class, "
+                                                                       "'display-flex')]")))
+                print('done with not eval, assert_success, retry')
+
             current_browser.snap()
             element.click()
+            print('test env is still eval')
             current_browser.snap()
             if assert_success and retry:
+                print('assert_success and retry')
                 current_browser.execute_script("arguments[0].value = '';", element)
                 current_browser.snap()
+            print('test env is still eval, again')
             current_browser.send_inputs(passcode)
             current_browser.snap()
-            current_browser.snap()
             current_browser.wait_for_tag('button', 'Verify').click()
-
+            sleep(5)
             current_browser.snap()
+            print('test env is still eval, again and again')
+            print(f'assert_success = {assert_success} and test_env == {test_env}')
+            if assert_success and test_env == 'eval':
+                print('assert_success and test_env == eval')
+                element = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@id='dont-trust-browser-button' and "
+                                                                       "text()='No, other people use this device']")))
+                element.click()
+            sleep(5)
+            print('test env is still eval, again and again and again')
+            current_browser.snap()
+            # element.click()
 
         if assert_success:
+            print('yes, assert')
             if test_env == 'prod':
                 current_browser.switch_to.default_content()
+            print('yes, still assert')
+            current_browser.snap()
             sp = sp_domain(match_service_provider) if match_service_provider else ''
             current_browser.wait_for_tag('h2', f'{sp} sign-in success!')
         elif assert_failure:
+            sleep(5)
+            print('actually, assert failure')
             if test_env == 'eval':
+                current_browser.snap()
                 current_browser.wait_for_tag('span', 'Invalid passcode')
             else:
                 current_browser.wait_for_tag('span', 'Incorrect passcode. Enter a passcode from Duo Mobile.')
