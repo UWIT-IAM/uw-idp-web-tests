@@ -180,7 +180,8 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
             assert_success: Optional[bool] = None,
             assert_failure: Optional[bool] = None,
             match_service_provider: Optional[ServiceProviderInstance] = None,
-            retry: Optional[bool] = False
+            retry: Optional[bool] = False,
+            is_this_your_device_screen: Optional[bool] = True
     ):
         """
         :param current_browser: The browser you want to invoke these actions on.
@@ -207,6 +208,10 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
                                  (Providing this gives your tests a higher confidence.)
         :param retry: Optional. Tells the function if we are retrying the passcode after entering one that does
                                 not match.
+        :param is_this_your_device_screen: Optional. Defaults to True, since in most cases we will see the Duo screen that asks
+                                             "is this your device". In a small number of cases, you won't see this
+                                             screen, ex: an auto 2fa where the user already has given an answer prior
+                                             and then switches diafines.
         """
 
         passcode_matches_default = passcode == default_passcode
@@ -270,7 +275,7 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
             current_browser.snap()
             print('test env is still eval, again and again')
             print(f'assert_success = {assert_success} and test_env == {test_env}')
-            if assert_success and test_env == 'eval':
+            if assert_success and test_env == 'eval' and is_this_your_device_screen:
                 print('assert_success and test_env == eval')
                 element = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@id='dont-trust-browser-button' and "
                                                                        "text()='No, other people use this device']")))
