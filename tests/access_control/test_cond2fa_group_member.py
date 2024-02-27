@@ -81,7 +81,7 @@ class TestCond2faGroupMember(AccessControlTestBase):
         with self.utils.using_test_sp(sp):
             self.browser.get(self.sp_shib_url(sp, append='mfaforce'))
             self.log_in_netid(self.browser, self.netid, assert_success=False)
-            self.enter_duo_passcode(self.browser, match_service_provider=sp)
+            self.enter_duo_passcode(self.browser, match_service_provider=sp, is_this_your_device_screen=False)
 
     def test_f(self):
         """

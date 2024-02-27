@@ -89,7 +89,7 @@ class TestNew2FASessionAndForcedReAuth:
             log_in_netid(self.browser, self.netid, assert_success=False)
             self.enter_duo_passcode(self.browser,
                                     passcode=passcode,
-                                    assert_failure=True)
+                                    assert_failure=True, is_this_your_device_screen=False)
             self.enter_duo_passcode(self.browser, select_duo_push=False, match_service_provider=sp, assert_success=True, retry=True)
 
     @pytest.mark.usefixtures('skip_if_eval')  # forced re-auth currently isn't in place at all for the same browser

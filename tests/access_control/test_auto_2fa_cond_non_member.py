@@ -24,11 +24,11 @@ class TestAuto2faCondAccessNonMember(AccessControlTestBase):
             self.enter_duo_passcode(self.browser, assert_success=False)
             self.browser.switch_to.default_content()
 
-            if self.test_env == 'eval':
-                self.wait = WebDriverWait(self.browser, 10)
-                element = self.wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@id='dont-trust-browser-button' and "
-                                                                       "text()='No, other people use this device']")))
-                element.click()
+            # if self.test_env == 'eval':
+            #     self.wait = WebDriverWait(self.browser, 10)
+            #     element = self.wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@id='dont-trust-browser-button' and "
+            #                                                            "text()='No, other people use this device']")))
+            #     element.click()
             self.browser.wait_for_tag('p', 'You are not authorized to access the application:')
 
     def test_b(self):
@@ -45,11 +45,6 @@ class TestAuto2faCondAccessNonMember(AccessControlTestBase):
             self.browser.get(self.sp_shib_url(sp))
             self.enter_duo_passcode(self.browser, assert_success=False)
             self.browser.switch_to.default_content()
-            if self.test_env == 'eval':
-                self.wait = WebDriverWait(self.browser, 10)
-                element = self.wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@id='dont-trust-browser-button' and "
-                                                                       "text()='No, other people use this device']")))
-                element.click()
             self.browser.wait_for_tag('p', 'You are not authorized to access the application:')
 
     def test_c(self):
@@ -67,11 +62,6 @@ class TestAuto2faCondAccessNonMember(AccessControlTestBase):
             self.log_in_netid(self.browser, self.netid, assert_success=False)
             self.enter_duo_passcode(self.browser, assert_success=False)
             self.browser.switch_to.default_content()
-            if self.test_env == 'eval':
-                self.wait = WebDriverWait(self.browser, 10)
-                element = self.wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@id='dont-trust-browser-button' and "
-                                                                       "text()='No, other people use this device']")))
-                element.click()
             self.browser.wait_for_tag('p', 'You are not authorized to access the application:')
 
     def test_d(self):
@@ -104,7 +94,7 @@ class TestAuto2faCondAccessNonMember(AccessControlTestBase):
         with self.utils.using_test_sp(sp):
             self.browser.get(self.sp_shib_url(sp, append='mfaforce'))
             self.log_in_netid(self.browser, self.netid, assert_success=False)
-            self.enter_duo_passcode(self.browser, assert_success=False)
+            self.enter_duo_passcode(self.browser, assert_success=False, is_this_your_device_screen=False)
             self.browser.switch_to.default_content()
             self.browser.wait_for_tag('p', 'You are not authorized to access the application:')
 
@@ -118,9 +108,4 @@ class TestAuto2faCondAccessNonMember(AccessControlTestBase):
             self.log_in_netid(self.browser, self.netid, assert_success=False)
             self.enter_duo_passcode(self.browser, assert_success=False)
             self.browser.switch_to.default_content()
-            if self.test_env == 'eval':
-                self.wait = WebDriverWait(self.browser, 10)
-                element = self.wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@id='dont-trust-browser-button' and "
-                                                                       "text()='No, other people use this device']")))
-                element.click()
             self.browser.wait_for_tag('p', 'You are not authorized to access the application:')
