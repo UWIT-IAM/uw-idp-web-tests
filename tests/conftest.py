@@ -199,7 +199,8 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
             assert_failure: Optional[bool] = None,
             match_service_provider: Optional[ServiceProviderInstance] = None,
             retry: Optional[bool] = False,
-            is_this_your_device_screen: Optional[bool] = True
+            is_this_your_device_screen: Optional[bool] = True,
+            select_this_is_my_device: Optional[bool] = False
     ):
         """
         eval and prod flows have 2 different expectations, since duo is updated on eval only, prod to come soon.
@@ -231,6 +232,7 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
                                              "is this your device". In a small number of cases, you won't see this
                                              screen, ex: an auto 2fa where the user already has given an answer prior
                                              and then switches diafines.
+        :param select_this_is_my_device: Optional. Defaults to False, since in most cases we don't want duo.com to set a rememberme style cookie.
         """
         passcode_matches_default = passcode == default_passcode
 
@@ -284,9 +286,14 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
             current_browser.snap()
 
             if test_env == 'eval' and is_this_your_device_screen:
-                element = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@id='dont-trust-browser-button' "
-                                                                           "and text()='No, other people use this "
-                                                                           "device']")))
+                if select_this_is_my_device:
+                    element = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@id='trust-browser-button']")))
+                else:
+                    element = wait.until(
+                        EC.element_to_be_clickable((By.XPATH, "//button[@id='dont-trust-browser-button' "
+                                                              "and text()='No, other people use this "
+                                                              "device']")))
+
                 element.click()
             sleep(5)
             current_browser.snap()
