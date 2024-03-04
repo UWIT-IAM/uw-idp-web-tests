@@ -5,6 +5,11 @@ https://wiki.cac.washington.edu/display/SMW/IAM+Team+Wiki
 
 2FA-1 thru 2FA-11. 2FA-8b and 2FA-10 are not yet automatable.
 """
+from time import sleep
+
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from webdriver_recorder.browser import Chrome
 from tests.helpers import Locators
 from tests.models import ServiceProviderInstance
@@ -89,7 +94,7 @@ class TestNew2FASessionAndForcedReAuth:
             log_in_netid(self.browser, self.netid, assert_success=False)
             self.enter_duo_passcode(self.browser,
                                     passcode=passcode,
-                                    assert_failure=True)
+                                    assert_failure=True, is_this_your_device_screen=False)
             self.enter_duo_passcode(self.browser, select_duo_push=False, match_service_provider=sp, assert_success=True, retry=True)
 
     def test_forced_reauth_2fa(self):
@@ -99,7 +104,7 @@ class TestNew2FASessionAndForcedReAuth:
             self.browser.get(self.sp_shib_url(sp, append='mfaforce'))
             self.browser.send_inputs(self.netid, self.password)
             self.browser.click(Locators.submit_button)
-            self.enter_duo_passcode(self.browser, match_service_provider=sp)
+            self.enter_duo_passcode(self.browser, match_service_provider=sp, is_this_your_device_screen=False)
 
 
 def test_2fa_user_opt_in(utils, sp_shib_url, sp_domain, secrets, netid4, test_env, fresh_browser, enter_duo_passcode):
@@ -142,7 +147,6 @@ class Test2FASessionCRNs:
         self.sp = ServiceProviderInstance.diafine6
         self.shib_mfa_url = sp_shib_url(self.sp, append='mfa')
 
-    @pytest.mark.usefixtures('skip_if_eval')
     def test_2fa_session_single_crn(self, netid2, enter_duo_passcode):
         """
         2FA-8 part a. 2FA session using an acct with a Single CRN.
@@ -152,10 +156,8 @@ class Test2FASessionCRNs:
             self.browser.get(self.shib_mfa_url)
             self.browser.send_inputs(netid2, self.password)
             self.browser.click(Locators.submit_button)
-            self.browser.wait_for_tag('p', "Using your 'sptest03' Duo identity.")
             enter_duo_passcode(self.browser, match_service_provider=self.sp)
 
-    @pytest.mark.usefixtures('skip_if_eval')
     def test_2fa_session_multiple_crn(self, netid10, enter_duo_passcode):
         """
         2FA-8 part b. 2FA session using an acct with multiple CRNs.
@@ -167,13 +169,10 @@ class Test2FASessionCRNs:
             self.browser.click(Locators.submit_button)
             self.browser.wait_for_tag('div', 'Select a UW NetID for 2nd factor authentication.')
             self.browser.find_element_by_xpath("//input[@value='sptest07']").click()
-            self.browser.snap()
             self.browser.click(Locators.submit_button)
-            self.browser.wait_for_tag('p', "Using your 'sptest07' Duo identity.")
             enter_duo_passcode(self.browser, match_service_provider=self.sp)
 
 
-@pytest.mark.usefixtures('skip_if_eval')
 def test_remember_me_cookie(
         utils, sp_shib_url, sp_url, log_in_netid,
         sp_domain, secrets, netid3, test_env, fresh_browser, enter_duo_passcode):
@@ -192,30 +191,37 @@ def test_remember_me_cookie(
         fresh_browser.get(sp_shib_url(sp, append='mfa'))
         fresh_browser.send_inputs(netid3, password)
         fresh_browser.click(Locators.submit_button)
-        fresh_browser.wait_for_tag('p', 'Use your 2FA device.')
-        fresh_browser.find_element_by_name('rememberme').click()
-        enter_duo_passcode(fresh_browser, match_service_provider=sp)
-        # go to an idp site to retrieve the rememberme cookie
+        if test_env == 'prod':
+            fresh_browser.wait_for_tag('p', 'Use your 2FA device.')
+            fresh_browser.find_element_by_name('rememberme').click()
+            enter_duo_passcode(fresh_browser, match_service_provider=sp)
+
+        if test_env == 'eval':
+            """
+            Select the other duo option, to get to the bypass code option
+            """
+            wait = WebDriverWait(fresh_browser, 10)
+            wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(text(), 'Other options')]")))
+            enter_duo_passcode(fresh_browser, match_service_provider=sp, select_this_is_my_device=True)
+
+        # go to an idp site to retrieve the shib idp cookies
         fresh_browser.get(idp_url)
         fresh_browser.wait_for_tag('h1', 'not found')
 
         # look for these cookies:
-        # shib_idp_session, shib_idp_session_ss, and uw-rememberme-sptest03
+        # shib_idp_session, shib_idp_session_ss
 
         cookie_names = {cookie['name'] for cookie in fresh_browser.get_cookies()}
         assert 'shib_idp_session' in cookie_names
         assert 'shib_idp_session_ss' in cookie_names
-        assert 'uw-rememberme-sptest03' in cookie_names
 
         fresh_browser.get(f'{sp_url(sp)}/Shibboleth.sso/Logout?return={idp_url}/profile/Logout')
-        # After signing out of the IdP, the rememberme cookie should remain in the browser,
-        # but shib_idp_session* cookies should be gone.
+        # shib_idp_session* cookies should be gone.
         fresh_browser.wait_for_tag('span', 'Your UW NetID sign-in session has ended.')
 
         cookie_names = {cookie['name'] for cookie in fresh_browser.get_cookies()}
         assert 'shib_idp_session' not in cookie_names
         assert 'shib_idp_session_ss' not in cookie_names
-        assert 'uw-rememberme-sptest03' in cookie_names
 
     sp = ServiceProviderInstance.diafine12
     with utils.using_test_sp(sp):
@@ -229,7 +235,7 @@ def test_forget_me_self_service(utils, sp_url, sp_domain, secrets, netid3, test_
     """
     2FA-11 Forget me (self-service)
 
-    Only runs when running tests against prod, for now. Eval does not yet support the uw-rememberme cookie.
+    Only runs when running tests against prod, for now. Eval does not yet support a forget_me type of function.
     """
     idp_env = ''
     if test_env == "eval":

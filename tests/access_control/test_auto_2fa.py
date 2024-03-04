@@ -45,7 +45,7 @@ class TestAuto2fa(AccessControlTestBase):
             with self.browser.tab_context():
                 self.browser.get(self.sp_shib_url(sp, append='force'))
                 self.log_in_netid(self.browser, netid3, match_service_provider=sp, assert_success=False)
-                self.enter_duo_passcode(self.browser)
+                self.enter_duo_passcode(self.browser, is_this_your_device_screen=False)
 
     def test_auto_2fa_d(self, netid3):
         """
@@ -78,7 +78,7 @@ class TestAuto2fa(AccessControlTestBase):
         with self.utils.using_test_sp(sp):
             self.browser.get(self.sp_shib_url(sp, append='mfaforce'))
             self.log_in_netid(self.browser, netid3, match_service_provider=sp, assert_success=False)
-            self.enter_duo_passcode(self.browser, match_service_provider=sp)
+            self.enter_duo_passcode(self.browser, match_service_provider=sp, is_this_your_device_screen=False)
 
     def test_auto_2fa_f(self, netid3):
         """

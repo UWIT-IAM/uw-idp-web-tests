@@ -169,6 +169,23 @@ def netid10() -> str:
     return AccountNetid.sptest10.value
 
 
+def duo_push(current_browser: Chrome):
+    """
+    Select the other duo option, to get to the bypass code option
+    """
+    wait = WebDriverWait(current_browser, 10)
+    wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(text(), 'Other options')]")))
+    current_browser.wait_for_tag('a', 'Other options').click()
+    current_browser.wait_for_tag('b', 'Other options to log in')
+
+
+def clear_passcode(current_browser: Chrome, element):
+    """
+    clear the data in the passcode field so you can try a different passcode
+    """
+    current_browser.execute_script("arguments[0].value = '';", element)
+
+
 @pytest.fixture
 def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
     default_passcode = secrets.test_accounts.duo_code.get_secret_value()
@@ -180,9 +197,12 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
             assert_success: Optional[bool] = None,
             assert_failure: Optional[bool] = None,
             match_service_provider: Optional[ServiceProviderInstance] = None,
-            retry: Optional[bool] = False
+            retry: Optional[bool] = False,
+            is_this_your_device_screen: Optional[bool] = True,
+            select_this_is_my_device: Optional[bool] = False,
     ):
         """
+        eval and prod flows have 2 different expectations, since duo is updated on eval only, prod to come soon.
         :param current_browser: The browser you want to invoke these actions on.
         :param passcode: The passcode you want to enter; if not provided, will use the
             correct test instance passcode.
@@ -207,8 +227,12 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
                                  (Providing this gives your tests a higher confidence.)
         :param retry: Optional. Tells the function if we are retrying the passcode after entering one that does
                                 not match.
+        :param is_this_your_device_screen: Optional. Defaults to True, since in most cases we will see the Duo screen that asks
+                                             "is this your device". In a small number of cases, you won't see this
+                                             screen, ex: an auto 2fa where the user already has given an answer prior
+                                             and then switches diafines.
+        :param select_this_is_my_device: Optional. Defaults to False, since in most cases we don't want duo.com to set a rememberme style cookie.
         """
-
         passcode_matches_default = passcode == default_passcode
 
         if assert_success is None:
@@ -231,37 +255,43 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
             )
             current_browser.snap()
             current_browser.execute_script("document.getElementById('passcode').click();")
-            sleep(5)
+            sleep(5)  # this sleep will go away after we copy the universal prompt 2fa to prod.
 
         if select_duo_push and test_env == 'eval':
-            wait = WebDriverWait(current_browser, 10)
-            wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(text(), 'Other options')]")))
-            current_browser.wait_for_tag('a', 'Other options').click()
-            current_browser.wait_for_tag('b', 'Other options to log in')
+            duo_push(current_browser)
 
         if test_env == 'eval':
+            # focus on the correct element based on if we are retrying the passcode,
+            # or its the first time we enter the passcode
             wait = WebDriverWait(current_browser, 10)
-            if assert_success and retry:
+            if retry:
                 element = wait.until(EC.element_to_be_clickable((By.XPATH,
                                                                  "//input[contains(@id, 'passcode-input')]")))
             else:
-                element = wait.until(EC.visibility_of_element_located((By.XPATH, "//div[contains(text(), 'Bypass code') "
-                                                                                 "and "
-                                                                                 "contains( "
-                                                                       "@class, 'row') and contains(@class, "
-                                                                                 "'display-flex') ]"))
-                                 )
+                element = wait.until(EC.visibility_of_element_located((By.XPATH,
+                                                                       "//div[contains(text(), 'Bypass code') and "
+                                                                       "contains(@class, 'row') and contains(@class, "
+                                                                       "'display-flex')]")))
+
             current_browser.snap()
             element.click()
             current_browser.snap()
-            if assert_success and retry:
-                current_browser.execute_script("arguments[0].value = '';", element)
-                current_browser.snap()
+            if retry:
+                clear_passcode(current_browser, element)
             current_browser.send_inputs(passcode)
-            current_browser.snap()
             current_browser.snap()
             current_browser.wait_for_tag('button', 'Verify').click()
 
+            if test_env == 'eval' and is_this_your_device_screen:
+                if select_this_is_my_device:
+                    element = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@id='trust-browser-button']")))
+                else:
+                    element = wait.until(
+                        EC.element_to_be_clickable((By.XPATH, "//button[@id='dont-trust-browser-button' "
+                                                              "and text()='No, other people use this "
+                                                              "device']")))
+
+                element.click()
             current_browser.snap()
 
         if assert_success:
