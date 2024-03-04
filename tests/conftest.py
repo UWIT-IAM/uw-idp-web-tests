@@ -184,7 +184,6 @@ def clear_passcode(current_browser: Chrome, element):
     clear the data in the passcode field so you can try a different passcode
     """
     current_browser.execute_script("arguments[0].value = '';", element)
-    current_browser.snap()
 
 
 @pytest.fixture
@@ -200,7 +199,7 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
             match_service_provider: Optional[ServiceProviderInstance] = None,
             retry: Optional[bool] = False,
             is_this_your_device_screen: Optional[bool] = True,
-            select_this_is_my_device: Optional[bool] = False
+            select_this_is_my_device: Optional[bool] = False,
     ):
         """
         eval and prod flows have 2 different expectations, since duo is updated on eval only, prod to come soon.
@@ -256,7 +255,7 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
             )
             current_browser.snap()
             current_browser.execute_script("document.getElementById('passcode').click();")
-            sleep(5)
+            sleep(5)  # this sleep will go away after we copy the universal prompt 2fa to prod.
 
         if select_duo_push and test_env == 'eval':
             duo_push(current_browser)
@@ -282,8 +281,6 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
             current_browser.send_inputs(passcode)
             current_browser.snap()
             current_browser.wait_for_tag('button', 'Verify').click()
-            sleep(5)
-            current_browser.snap()
 
             if test_env == 'eval' and is_this_your_device_screen:
                 if select_this_is_my_device:
@@ -295,19 +292,15 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
                                                               "device']")))
 
                 element.click()
-            sleep(5)
             current_browser.snap()
 
         if assert_success:
             if test_env == 'prod':
                 current_browser.switch_to.default_content()
-            current_browser.snap()
             sp = sp_domain(match_service_provider) if match_service_provider else ''
             current_browser.wait_for_tag('h2', f'{sp} sign-in success!')
         elif assert_failure:
-            sleep(5)
             if test_env == 'eval':
-                current_browser.snap()
                 current_browser.wait_for_tag('span', 'Invalid passcode')
             else:
                 current_browser.wait_for_tag('span', 'Incorrect passcode. Enter a passcode from Duo Mobile.')

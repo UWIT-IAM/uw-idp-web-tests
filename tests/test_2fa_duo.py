@@ -156,8 +156,6 @@ class Test2FASessionCRNs:
             self.browser.get(self.shib_mfa_url)
             self.browser.send_inputs(netid2, self.password)
             self.browser.click(Locators.submit_button)
-            sleep(5)
-            self.browser.snap()
             enter_duo_passcode(self.browser, match_service_provider=self.sp)
 
     def test_2fa_session_multiple_crn(self, netid10, enter_duo_passcode):
@@ -171,10 +169,7 @@ class Test2FASessionCRNs:
             self.browser.click(Locators.submit_button)
             self.browser.wait_for_tag('div', 'Select a UW NetID for 2nd factor authentication.')
             self.browser.find_element_by_xpath("//input[@value='sptest07']").click()
-            self.browser.snap()
             self.browser.click(Locators.submit_button)
-            sleep(5)
-            self.browser.snap()
             enter_duo_passcode(self.browser, match_service_provider=self.sp)
 
 
@@ -209,10 +204,6 @@ def test_remember_me_cookie(
             wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(text(), 'Other options')]")))
             enter_duo_passcode(fresh_browser, match_service_provider=sp, select_this_is_my_device=True)
 
-        # fresh_browser.wait_for_tag('p', 'Use your 2FA device.')
-        # fresh_browser.find_element_by_name('rememberme').click()
-
-
         # go to an idp site to retrieve the shib idp cookies
         fresh_browser.get(idp_url)
         fresh_browser.wait_for_tag('h1', 'not found')
@@ -232,7 +223,6 @@ def test_remember_me_cookie(
         assert 'shib_idp_session' not in cookie_names
         assert 'shib_idp_session_ss' not in cookie_names
 
-    sleep(5)
     sp = ServiceProviderInstance.diafine12
     with utils.using_test_sp(sp):
         fresh_browser.get(sp_shib_url(sp, append='mfa'))
