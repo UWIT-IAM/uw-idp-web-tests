@@ -5,7 +5,6 @@ https://wiki.cac.washington.edu/display/SMW/IAM+Team+Wiki
 
 2FA-1 thru 2FA-11. 2FA-8b and 2FA-10 are not yet automatable.
 """
-from time import sleep
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
@@ -191,18 +190,13 @@ def test_remember_me_cookie(
         fresh_browser.get(sp_shib_url(sp, append='mfa'))
         fresh_browser.send_inputs(netid3, password)
         fresh_browser.click(Locators.submit_button)
-        if test_env == 'prod':
-            fresh_browser.wait_for_tag('p', 'Use your 2FA device.')
-            fresh_browser.find_element_by_name('rememberme').click()
-            enter_duo_passcode(fresh_browser, match_service_provider=sp)
 
-        if test_env == 'eval':
-            """
-            Select the other duo option, to get to the bypass code option
-            """
-            wait = WebDriverWait(fresh_browser, 10)
-            wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(text(), 'Other options')]")))
-            enter_duo_passcode(fresh_browser, match_service_provider=sp, select_this_is_my_device=True)
+        """
+        Select the other duo option, to get to the bypass code option
+        """
+        wait = WebDriverWait(fresh_browser, 10)
+        wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(text(), 'Other options')]")))
+        enter_duo_passcode(fresh_browser, match_service_provider=sp, select_this_is_my_device=True)
 
         # go to an idp site to retrieve the shib idp cookies
         fresh_browser.get(idp_url)
@@ -229,7 +223,7 @@ def test_remember_me_cookie(
         log_in_netid(fresh_browser, netid3, match_service_provider=sp)
 
 
-@pytest.mark.usefixtures('skip_if_eval')
+@pytest.mark.skip(reason="We dont yet have a way to 'forget' a remember me style cookie. Archiving this for when we do")
 def test_forget_me_self_service(utils, sp_url, sp_domain, secrets, netid3, test_env, enter_duo_passcode,
                                 fresh_browser, sp_shib_url):
     """
