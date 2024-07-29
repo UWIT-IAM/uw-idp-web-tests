@@ -167,7 +167,7 @@ class Test2FASessionCRNs:
             self.browser.send_inputs(netid10, self.password)
             self.browser.click(Locators.submit_button)
             self.browser.wait_for_tag('div', 'Select a UW NetID for 2nd factor authentication.')
-            self.browser.find_element_by_xpath("//input[@value='sptest07']").click()
+            self.browser.find_element(By.XPATH, "//input[@value='sptest07']").click()
             self.browser.click(Locators.submit_button)
             enter_duo_passcode(self.browser, match_service_provider=self.sp)
 
