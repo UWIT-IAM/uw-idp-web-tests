@@ -296,6 +296,7 @@ def log_in_netid(secrets: TestSecrets, sp_domain) -> Callable[..., NoReturn]:
             assert_success = password == default_password
         match_service_provider = sp_domain(match_service_provider) if match_service_provider else ''
         current_browser.wait_for_tag('p', 'Please sign in.')
+        current_browser.find_element(By.ID, "weblogin_netid").clear()
         current_browser.send_inputs(netid, password)
         current_browser.click(Locators.submit_button)
         if assert_success:

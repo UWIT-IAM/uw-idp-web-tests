@@ -101,6 +101,7 @@ class TestNew2FASessionAndForcedReAuth:
         sp = ServiceProviderInstance.diafine12
         with self.utils.using_test_sp(sp):
             self.browser.get(self.sp_shib_url(sp, append='mfaforce'))
+            self.browser.find_element(By.ID, "weblogin_netid").clear()
             self.browser.send_inputs(self.netid, self.password)
             self.browser.click(Locators.submit_button)
             self.enter_duo_passcode(self.browser, match_service_provider=sp, is_this_your_device_screen=False)
