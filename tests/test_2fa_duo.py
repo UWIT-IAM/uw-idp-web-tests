@@ -101,6 +101,7 @@ class TestNew2FASessionAndForcedReAuth:
         sp = ServiceProviderInstance.diafine12
         with self.utils.using_test_sp(sp):
             self.browser.get(self.sp_shib_url(sp, append='mfaforce'))
+            self.browser.find_element(By.ID, "weblogin_netid").clear()
             self.browser.send_inputs(self.netid, self.password)
             self.browser.click(Locators.submit_button)
             self.enter_duo_passcode(self.browser, match_service_provider=sp, is_this_your_device_screen=False)
@@ -206,7 +207,11 @@ def test_remember_me_cookie(
         # shib_idp_session, shib_idp_session_ss
 
         cookie_names = {cookie['name'] for cookie in fresh_browser.get_cookies()}
-        assert 'shib_idp_session' in cookie_names
+        # prod and eval are different for about a week til the new shib is released to prod.
+        if test_env == 'eval':
+            assert '__Host-shib_idp_session' in cookie_names
+        else:
+            assert 'shib_idp_session' in cookie_names
         assert 'shib_idp_session_ss' in cookie_names
 
         fresh_browser.get(f'{sp_url(sp)}/Shibboleth.sso/Logout?return={idp_url}/profile/Logout')
@@ -214,7 +219,11 @@ def test_remember_me_cookie(
         fresh_browser.wait_for_tag('span', 'Your UW NetID sign-in session has ended.')
 
         cookie_names = {cookie['name'] for cookie in fresh_browser.get_cookies()}
-        assert 'shib_idp_session' not in cookie_names
+        # prod and eval are different for about a week til the new shib is released to prod.
+        if test_env == 'eval':
+            assert '__Host-shib_idp_session' not in cookie_names
+        else:
+            assert 'shib_idp_session' not in cookie_names
         assert 'shib_idp_session_ss' not in cookie_names
 
     sp = ServiceProviderInstance.diafine12

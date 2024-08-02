@@ -165,4 +165,4 @@ then
   add_strict_host_override "$STRICT_HOST" "$STRICT_IP"
 fi
 COMPOSE_ARGS+=" $REQUIRED_COMPOSE_ARGS"
-docker-compose ${COMPOSE_ARGS}
+docker compose ${COMPOSE_ARGS}
