@@ -208,10 +208,7 @@ def test_remember_me_cookie(
 
         cookie_names = {cookie['name'] for cookie in fresh_browser.get_cookies()}
         # prod and eval are different for about a week til the new shib is released to prod.
-        if test_env == 'eval':
-            assert '__Host-shib_idp_session' in cookie_names
-        else:
-            assert 'shib_idp_session' in cookie_names
+        assert '__Host-shib_idp_session' in cookie_names
         assert 'shib_idp_session_ss' in cookie_names
 
         fresh_browser.get(f'{sp_url(sp)}/Shibboleth.sso/Logout?return={idp_url}/profile/Logout')
@@ -220,10 +217,7 @@ def test_remember_me_cookie(
 
         cookie_names = {cookie['name'] for cookie in fresh_browser.get_cookies()}
         # prod and eval are different for about a week til the new shib is released to prod.
-        if test_env == 'eval':
-            assert '__Host-shib_idp_session' not in cookie_names
-        else:
-            assert 'shib_idp_session' not in cookie_names
+        assert '__Host-shib_idp_session' not in cookie_names
         assert 'shib_idp_session_ss' not in cookie_names
 
     sp = ServiceProviderInstance.diafine12
