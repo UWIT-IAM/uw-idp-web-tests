@@ -1,4 +1,4 @@
-name: Not In Use - Run UW IdP Web Tests with Slack
+name: Run UW IdP Web Tests with Slack - breaks w/o slack.
 
 on:
   push:
