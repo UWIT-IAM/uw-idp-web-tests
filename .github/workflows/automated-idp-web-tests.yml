@@ -51,7 +51,7 @@ env:
   ###############################################
   # Do not edit the env values below this line. #
   # Other defaults are set in .github/scripts/configure-workflow.sh
-  SLACK_BOT_TOKEN: ${{ secrets.ACTIONS_SLACK_BOT_TOKEN }}
+  # SLACK_BOT_TOKEN: ${{ secrets.ACTIONS_SLACK_BOT_TOKEN }}
   ARTIFACT_BUCKET: ${{ secrets.IDENTITY_ARTIFACT_BUCKET }}
   ###############################################
 
