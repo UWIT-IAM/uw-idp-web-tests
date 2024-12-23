@@ -88,7 +88,7 @@ jobs:
           INPUT_TARGET_IDP_ENV: ${{ github.event.inputs.target-idp-env }}
           INPUT_TARGET_IDP_HOST: ${{ github.event.inputs.target-idp-host }}
           INPUT_REASON: ${{ github.event.inputs.reason }}
-          INPUT_SLACK_CHANNEL: ${{ github.event.inputs.slack-channel }}
+          # INPUT_SLACK_CHANNEL: ${{ github.event.inputs.slack-channel }}
           INPUT_PYTEST_ARGS: ${{ github.event.inputs.pytest-args }}
           UWCA_CERT: ${{ secrets.UWCA_CERT }}
           UWCA_KEY: ${{ secrets.UWCA_KEY }}
@@ -96,9 +96,9 @@ jobs:
           source ./.github/scripts/configure-workflow.sh
           configure-workflow
 
-      - id: set-envs
-        run: |
-          echo "SLACK_CANVAS_ID=${{ steps.configure.outputs.workflow-id }}" >> $GITHUB_ENV
+      # - id: set-envs
+      #   run: |
+      #     echo "SLACK_CANVAS_ID=${{ steps.configure.outputs.workflow-id }}" >> $GITHUB_ENV
 
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
@@ -111,45 +111,45 @@ jobs:
         with:
           version: '>= 363.0.0'
 
-      - name: Initialize slack workflow canvas
-        env:
-          IDP_ENV: ${{ steps.configure.outputs.idp-env }}
-        with:
-          command: create-canvas
-          # Since your IDE may not pick up on this as JSON and help you,
-          # always make sure to run this through a JSON validator.
-          json: >
-            {
-              "channel": "${{ steps.configure.outputs.slack-channel }}",
-              "canvasId": "${{ steps.configure.outputs.workflow-id }}",
-              "status": "in progress",
-              "description": "${{ env.IDP_ENV }} IdP Web Tests",
-              "steps": [
-                {
-                  "description": "Configure workflow",
-                  "status": "succeeded",
-                  "stepId": "configure-workflow"
-                },
-                {
-                  "description": "Run UW IdP tests",
-                  "stepId": "run-tests",
-                  "status": "in progress"
-                },
-                {
-                  "description": "Upload test artifacts",
-                  "stepId": "upload-artifacts"
-                }
-              ]
-            }
-          channel: ${{ steps.configure.outputs.slack-channel }}
-          description: ${{ env.IDP_ENV }} IdP Web Tests
-        uses: UWIT-IAM/actions/update-slack-workflow-canvas@main
+      # - name: Initialize slack workflow canvas
+      #   env:
+      #     IDP_ENV: ${{ steps.configure.outputs.idp-env }}
+      #   with:
+      #     command: create-canvas
+      #     # Since your IDE may not pick up on this as JSON and help you,
+      #     # always make sure to run this through a JSON validator.
+      #     json: >
+      #       {
+      #         "channel": "${{ steps.configure.outputs.slack-channel }}",
+      #         "canvasId": "${{ steps.configure.outputs.workflow-id }}",
+      #         "status": "in progress",
+      #         "description": "${{ env.IDP_ENV }} IdP Web Tests",
+      #         "steps": [
+      #           {
+      #             "description": "Configure workflow",
+      #             "status": "succeeded",
+      #             "stepId": "configure-workflow"
+      #           },
+      #           {
+      #             "description": "Run UW IdP tests",
+      #             "stepId": "run-tests",
+      #             "status": "in progress"
+      #           },
+      #           {
+      #             "description": "Upload test artifacts",
+      #             "stepId": "upload-artifacts"
+      #           }
+      #         ]
+      #       }
+      #     channel: ${{ steps.configure.outputs.slack-channel }}
+      #     description: ${{ env.IDP_ENV }} IdP Web Tests
+      #   uses: UWIT-IAM/actions/update-slack-workflow-canvas@main
 
-      - name: add change information to slack canvas
-        with:
-          command: add-artifact
-          description: ${{ steps.configure.outputs.workflow-snapshot-artifact }}
-        uses: UWIT-IAM/actions/update-slack-workflow-canvas@main
+      # - name: add change information to slack canvas
+      #   with:
+      #     command: add-artifact
+      #     description: ${{ steps.configure.outputs.workflow-snapshot-artifact }}
+      #   uses: UWIT-IAM/actions/update-slack-workflow-canvas@main
 
       - env:
           RUN_TESTS_ARGS: ${{ steps.configure.outputs.run-tests-args }}
@@ -175,17 +175,17 @@ jobs:
         name: Run UW ${{ env.IDP_ENV }} IdP Web Tests
         id: run-tests
 
-      - if: always()
-        env:
-          upload_step_status: >
-            ${{ steps.run-tests.outputs.upload-artifacts == 'true' && 'in progress' || 'not started' }}
-          test_status: ${{ steps.run-tests.outputs.test-status }}
-        with:
-          command: update-workflow
-          step-id: run-tests, upload-artifacts
-          step-status: ${{ env.test_status }}, ${{ env.upload_step_status }}
-          workflow-status: ${{ env.test_status == 'succeeded' && 'in progress' || 'failed' }}
-        uses: UWIT-IAM/actions/update-slack-workflow-canvas@main
+      # - if: always()
+      #   env:
+      #     upload_step_status: >
+      #       ${{ steps.run-tests.outputs.upload-artifacts == 'true' && 'in progress' || 'not started' }}
+      #     test_status: ${{ steps.run-tests.outputs.test-status }}
+      #   with:
+      #     command: update-workflow
+      #     step-id: run-tests, upload-artifacts
+      #     step-status: ${{ env.test_status }}, ${{ env.upload_step_status }}
+      #     workflow-status: ${{ env.test_status == 'succeeded' && 'in progress' || 'failed' }}
+      #   uses: UWIT-IAM/actions/update-slack-workflow-canvas@main
 
       - if: ${{ always() && steps.run-tests.outputs.upload-artifacts == 'true' }}
         id: upload-artifacts
@@ -195,41 +195,41 @@ jobs:
         name: upload storyboards to identity-artifacts
         uses: google-github-actions/upload-cloud-storage@v2
 
-      - if: ${{ always() && steps.run-tests.outputs.upload-artifacts == 'true' }}
-        with:
-          command: update-workflow
-          step-id: upload-artifacts
-          step-status: >
-            ${{ steps.upload-artifacts.conclusion == 'success' && 'succeeded' || 'failed' }}
-        uses: UWIT-IAM/actions/update-slack-workflow-canvas@main
+      # - if: ${{ always() && steps.run-tests.outputs.upload-artifacts == 'true' }}
+      #   with:
+      #     command: update-workflow
+      #     step-id: upload-artifacts
+      #     step-status: >
+      #       ${{ steps.upload-artifacts.conclusion == 'success' && 'succeeded' || 'failed' }}
+      #   uses: UWIT-IAM/actions/update-slack-workflow-canvas@main
 
-      - if: ${{ always() && steps.run-tests.outputs.upload-artifacts == 'true' }}
-        with:
-          command: add-artifact
-          description: >
-            *Storyboards*: ${{ steps.configure.outputs.report-url }}
-        name: add storyboard link to slack canvas
-        uses: UWIT-IAM/actions/update-slack-workflow-canvas@main
+      # - if: ${{ always() && steps.run-tests.outputs.upload-artifacts == 'true' }}
+      #   with:
+      #     command: add-artifact
+      #     description: >
+      #       *Storyboards*: ${{ steps.configure.outputs.report-url }}
+      #   name: add storyboard link to slack canvas
+      #   uses: UWIT-IAM/actions/update-slack-workflow-canvas@main
 
-      - if: always()
-        with:
-          command: update-workflow
-          workflow-status: ${{ steps.run-tests.conclusion == 'success' && 'succeeded' || 'failed' }}
-        name: Update workflow status
-        uses: UWIT-IAM/actions/update-slack-workflow-canvas@main
+      # - if: always()
+      #   with:
+      #     command: update-workflow
+      #     workflow-status: ${{ steps.run-tests.conclusion == 'success' && 'succeeded' || 'failed' }}
+      #   name: Update workflow status
+      #   uses: UWIT-IAM/actions/update-slack-workflow-canvas@main
 
-      - if: always()
-        with:
-          command: remove-step
-          step-id: '*'
-          step-status: succeeded
-        uses: UWIT-IAM/actions/update-slack-workflow-canvas@main
+      # - if: always()
+      #   with:
+      #     command: remove-step
+      #     step-id: '*'
+      #     step-status: succeeded
+      #   uses: UWIT-IAM/actions/update-slack-workflow-canvas@main
 
-      - if: always()
-        with:
-          command: finalize-workflow
-        name: clean up slack canvas metadata
-        uses: UWIT-IAM/actions/update-slack-workflow-canvas@main
+      # - if: always()
+      #   with:
+      #     command: finalize-workflow
+      #   name: clean up slack canvas metadata
+      #   uses: UWIT-IAM/actions/update-slack-workflow-canvas@main
 
       - if: ${{ always() && github.event_name == 'pull_request' }}
         id: update-pull-request
