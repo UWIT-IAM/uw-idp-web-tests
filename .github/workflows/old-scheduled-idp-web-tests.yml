@@ -25,6 +25,7 @@ jobs:
       id-token: write
       actions: write
     env:
+      SLACK_BOT_TOKEN: ${{ secrets.ACTIONS_SLACK_BOT_TOKEN }}
       ARTIFACT_BUCKET: ${{ secrets.IDENTITY_ARTIFACT_BUCKET }}
     steps:
       - uses: actions/checkout@v3
@@ -49,6 +50,40 @@ jobs:
           gcloud-token: ${{ secrets.TEST_RUNNER_GOOGLE_TOKEN }}
 
 
+      - name: Initialize slack workflow canvas
+        env:
+          IDP_ENV: ${{ steps.configure.outputs.idp-env }}
+        with:
+          json: >
+            {
+              "channel": "#iam-bots",
+              "status": "in progress",
+              "description": "Scheduled ${{ matrix.idp_env }} IdP Web Tests",
+              "steps": [
+                {
+                  "description": "Run tests",
+                  "stepId": "run-tests",
+                  "status": "in progress"
+                },
+                {
+                  "description": "Upload test artifacts",
+                  "stepId": "upload-artifacts"
+                }
+              ]
+            }
+        uses: UWIT-IAM/actions/set-up-slack-notification-canvas@0.1
+        id: slack
+
+      - if: steps.slack.outputs.canvas-id
+        name: Add workflow link to slack notification
+        uses: UWIT-IAM/actions/update-slack-workflow-canvas@0.1
+        with:
+          command: add-artifact
+          description: "<${{ env.workflow_link }} | View Workflow>"
+        env:
+          workflow_link: ${{ steps.config.outputs.workflow_link }}
+
+
       - name: Run tests
         run: ./scripts/run-tests.sh -- --env ${{ matrix.idp_env }}
         id: run
@@ -65,6 +100,16 @@ jobs:
         id: post-run
 
 
+      - if: always() && steps.slack.outputs.canvas-id
+        env:
+          run_status: ${{ steps.run.outcome == 'success' && 'succeeded' || 'failed' }}
+          upload_status: ${{ steps.post-run.outputs.upload_storyboards == 'true' && 'in progress' || 'failed'}}
+        uses: UWIT-IAM/actions/update-slack-workflow-canvas@0.1
+        with:
+          step-id: run-tests, upload-artifacts
+          step-status: ${{ env.run_status }}, ${{ env.upload_status }}
+          command: update-workflow
+
       - if: always() && steps.post-run.outputs.upload_storyboards == 'true'
         name: Upload storyboards to identity-artifact
         id: upload-storyboards
@@ -73,6 +118,17 @@ jobs:
           path: 'web-tests'
           destination: ${{ secrets.IDENTITY_ARTIFACT_BUCKET }}
 
+      - if: >
+          always()
+          && steps.post-run.outputs.upload_storyboards =='true'
+          && steps.upload-storyboards.outcome == 'success'
+          && steps.slack.outputs.canvas-id
+        name: Add storyboard link to slack notification
+        id: add-storyboard-link-to-slack
+        uses: UWIT-IAM/actions/update-slack-workflow-canvas@0.1
+        with:
+          command: add-artifact
+          description: "<${{ steps.config.outputs.storyboard_link }} | View Storyboards>"
 
       - if: >
           always()
@@ -82,3 +138,19 @@ jobs:
         env:
           storyboard_link: ${{ steps.config.outputs.storyboard_link }}
         run: echo "::notice::Storyboards located at ${{ env.storyboard_link }}"
+
+      - if: >
+          always()
+          && steps.post-run.outputs.upload_storyboards == 'true'
+        uses: UWIT-IAM/actions/update-slack-workflow-canvas@0.1
+        env:
+          step_status: ${{ steps.upload-storyboards.outcome == 'success' && 'succeeded' || 'failed' }}
+        with:
+          command: update-workflow
+          step-id: upload-artifacts
+          step-status: ${{ env.step_status }}
+
+      - if: always() && steps.slack.outputs.canvas-id
+        uses: UWIT-IAM/actions/finalize-slack-notification-canvas@0.1
+        with:
+          workflow-status: ${{ job.status == 'success' && 'succeeded' || 'failed' }}
