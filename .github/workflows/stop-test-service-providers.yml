@@ -33,7 +33,7 @@ jobs:
       contents: 'read'
       id-token: 'write'
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v2'
@@ -45,5 +45,5 @@ jobs:
         with:
           version: '>= 363.0.0'
 
-    - run: |
-        python -m tests.sp_manager stop
+      - run: |
+          python -m tests.sp_manager stop
