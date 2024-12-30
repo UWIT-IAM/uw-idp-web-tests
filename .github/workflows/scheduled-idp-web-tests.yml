@@ -1,4 +1,4 @@
-name: Scheduled UW IdP Test Matrix
+name: No Slack - Scheduled UW IdP Test Matrix
 
 on:
   push:
