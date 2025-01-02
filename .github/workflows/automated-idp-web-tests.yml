@@ -126,7 +126,6 @@ jobs:
                          {
                            "type": "FactSet",
                            "facts": [
-                               {"title": "IdP Web Tests running on ", "value": "['"$env.IDP_ENV"']('"$env.IDP_ENV"')"},
                                {"title": "IdP Web Tests running on ", "value": "'${{ env.IDP_ENV }}'"}
                            ]
                          }
@@ -184,3 +183,53 @@ jobs:
             - Test result: ${{ steps.run-tests.outcome }}
             - [Storyboards](${{ env.REPORT_URL }})
             **Commit ${{ env.SHORT_SHA }}**
+
+      - name: Notify Teams of Test Run Completion
+        env:
+          TEST_STATUS: ${{ env.TEST_STATUS }}
+          REPORT_URL: ${{ steps.configure.outputs.report-url }}
+        if: always()
+        run: |
+          # Set the message body dynamically based on TEST_STATUS
+          if [ "$TEST_STATUS" = "succeeded" ]; then
+            test_result="Test run for IDP passed successfully ✅"
+          else
+            test_result="Test run for IDP failed ❌"
+          fi
+
+          # Notify Teams with the status of the test run
+          curl -H "Content-Type: application/json" \
+               -d '{
+                     "type": "message",
+                     "attachments": [
+                       {
+                         "contentType": "application/vnd.microsoft.card.adaptive",
+                         "content": {
+                           "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                           "type": "AdaptiveCard",
+                           "version": "1.4",
+                           "body": [
+                             {
+                               "type": "TextBlock",
+                               "size": "Large",
+                               "weight": "Bolder",
+                               "text": "Test Run Notification"
+                             },
+                             {
+                               "type": "TextBlock",
+                               "text": "'"$test_result"'",
+                               "wrap": true
+                             },
+                             {
+                               "type": "FactSet",
+                               "facts": [
+                                 {"title": "Storyboards:", "value": "['"$REPORT_URL"']('"$REPORT_URL"')"},
+                                 {"title": "Initiated By:", "value": "'"${{ github.actor }}"'"}
+                              ]
+                             }
+                           ]
+                         }
+                       }
+                     ]
+                   }' \
+               "${{ secrets.TEAMS_INTEGRATIONS_DAILY_WEB_TESTS }}"
