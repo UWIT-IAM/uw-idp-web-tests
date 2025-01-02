@@ -43,6 +43,7 @@ env:
   ###############################################
   # Do not edit the env values below this line. #
   # Other defaults are set in .github/scripts/configure-workflow.sh
+  TEAMS_INTEGRATIONS_DAILY_WEB_TESTS: ${{ secrets.TEAMS_INTEGRATIONS_DAILY_WEB_TESTS }}
   ARTIFACT_BUCKET: ${{ secrets.IDENTITY_ARTIFACT_BUCKET }}
   ###############################################
 
@@ -95,6 +96,46 @@ jobs:
         uses: 'google-github-actions/setup-gcloud@v2'
         with:
           version: '>= 363.0.0'
+
+      - name: Notify Teams of Test Run Start
+        env:
+          IDP_ENV: ${{ steps.configure.outputs.idp-env }}
+        run: |
+          curl -H "Content-Type: application/json" \
+               -d '{
+                 "type": "message",
+                 "attachments": [
+                   {
+                     "contentType": "application/vnd.microsoft.card.adaptive",
+                     "content": {
+                       "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                       "type": "AdaptiveCard",
+                       "version": "1.4",
+                       "body": [
+                         {
+                           "type": "TextBlock",
+                           "size": "Large",
+                           "weight": "Bolder",
+                           "text": "Test Run Notification"
+                         },
+                         {
+                           "type": "TextBlock",
+                           "text": "Test run for UW IdP tests started ⏳",
+                           "wrap": true
+                         },
+                         {
+                           "type": "FactSet",
+                           "facts": [
+                               {"title": "IdP Web Tests running on ", "value": "['"$env.IDP_ENV"']('"$env.IDP_ENV"')"},
+                               {"title": "IdP Web Tests running on ", "value": "'${{ env.IDP_ENV }}'"}
+                           ]
+                         }
+                       ]
+                     }
+                   }
+                 ]
+               }' \
+               "${{ env.TEAMS_INTEGRATIONS_DAILY_WEB_TESTS }}"
 
       - env:
           RUN_TESTS_ARGS: ${{ steps.configure.outputs.run-tests-args }}
