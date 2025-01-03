@@ -186,11 +186,12 @@ jobs:
 
       - name: Notify Teams of Test Run Completion
         env:
-          TEST_STATUS: ${{ env.test_status }}
+          TEST_STATUS: ${{ steps.run-tests.outputs.test-status }}
           REPORT_URL: ${{ steps.configure.outputs.report-url }}
         if: always()
         run: |
           # Set the message body dynamically based on TEST_STATUS
+          echo "TEST_STATUS TEST_STATUS TEST_STATUS TEST_STATUS TEST_STATUS=${{ env.TEST_STATUS }}"
           if [ "$TEST_STATUS" = "succeeded" ]; then
             test_result="Test run for IDP passed successfully ✅"
           else
