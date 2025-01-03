@@ -186,7 +186,7 @@ jobs:
 
       - name: Notify Teams of Test Run Completion
         env:
-          TEST_STATUS: ${{ env.TEST_STATUS }}
+          TEST_STATUS: ${{ env.test_status }}
           REPORT_URL: ${{ steps.configure.outputs.report-url }}
         if: always()
         run: |
