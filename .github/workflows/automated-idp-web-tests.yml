@@ -100,6 +100,7 @@ jobs:
       - name: Notify Teams of Test Run Start
         env:
           IDP_ENV: ${{ steps.configure.outputs.idp-env }}
+          INPUT_REASON: ${{ steps.configure.outputs.input-reason }}
         run: |
           curl -H "Content-Type: application/json" \
                -d '{
@@ -126,7 +127,8 @@ jobs:
                          {
                            "type": "FactSet",
                            "facts": [
-                               {"title": "IdP Web Tests running on ", "value": "'${{ env.IDP_ENV }}'"}
+                               {"title": "IdP Web Tests running on ", "value": "'${{ env.IDP_ENV }}'"},
+                               {"title": "Reason for Test Run", "value": "${{ env.INPUT_REASON }}"}
                            ]
                          }
                        ]
