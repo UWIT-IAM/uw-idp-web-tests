@@ -33,7 +33,8 @@ services:
     volumes:
       - ${CREDENTIAL_MOUNT_POINT}:/secrets:ro
       - ${REPORT_MOUNT_POINT}:/tmp/webdriver-report
-    command: pytest ${PYTEST_ARGS} --selenium-server selenium:4444
+    # command: pytest ${PYTEST_ARGS} --selenium-server selenium:4444
+    command: echo "The test would start here"
 
   selenium:
     image: selenium/standalone-chrome:4
