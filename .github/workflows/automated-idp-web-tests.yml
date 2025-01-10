@@ -128,7 +128,8 @@ jobs:
                            "type": "FactSet",
                            "facts": [
                                {"title": "IdP Web Tests running on ", "value": "'${{ env.IDP_ENV }}'"},
-                               {"title": "Reason for Test Run", "value": "${{ env.INPUT_REASON }}"}
+                               {"title": "Reason for Test Run", "value": "${{ env.INPUT_REASON }}"},
+                               {"title": "Initiated By:", "value": "'"${{ github.actor }}"'"}
                            ]
                          }
                        ]
