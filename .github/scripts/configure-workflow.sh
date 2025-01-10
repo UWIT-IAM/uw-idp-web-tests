@@ -133,6 +133,5 @@ function configure-workflow() {
   set-output idp-env "${INPUT_TARGET_IDP_ENV}"
   set-output idp-host "${INPUT_TARGET_IDP_HOST}"
   set-output run-tests-args "$(get-run-tests-args $artifact_object_path)"
-  set-output slack-channel "${INPUT_SLACK_CHANNEL:-#iam-bots}"
   set-output input-reason "$(get-input-reason)"
 }

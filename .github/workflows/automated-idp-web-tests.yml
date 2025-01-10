@@ -1,4 +1,4 @@
-name: No Slack - Run UW IdP Web Tests
+name: Run UW IdP Web Tests
 
 on:
   push:
@@ -117,11 +117,11 @@ jobs:
                            "type": "TextBlock",
                            "size": "Large",
                            "weight": "Bolder",
-                           "text": "Test Run Notification"
+                           "text": "IDP Test Run Notification"
                          },
                          {
                            "type": "TextBlock",
-                           "text": "Test run for UW IdP tests started ⏳",
+                           "text": "Starting - IDP Tests ⏳",
                            "wrap": true
                          },
                          {
@@ -195,7 +195,7 @@ jobs:
         if: always()
         run: |
           # Set the message body dynamically based on TEST_STATUS
-          echo "TEST_STATUS TEST_STATUS TEST_STATUS TEST_STATUS TEST_STATUS=${{ env.TEST_STATUS }}"
+          echo "TEST_STATUS=${{ env.TEST_STATUS }}"
           if [ "$TEST_STATUS" = "succeeded" ]; then
             test_result="Test run for IDP passed successfully ✅"
           else
@@ -218,7 +218,7 @@ jobs:
                                "type": "TextBlock",
                                "size": "Large",
                                "weight": "Bolder",
-                               "text": "Test Run Notification"
+                               "text": "Completed - IDP Test Run Notification"
                              },
                              {
                                "type": "TextBlock",
@@ -228,6 +228,8 @@ jobs:
                              {
                                "type": "FactSet",
                                "facts": [
+                                 {"title": "IdP Web Tests ran on ", "value": "'${{ env.IDP_ENV }}'"},
+                                 {"title": "Reason for Test Run was ", "value": "${{ env.INPUT_REASON }}"},
                                  {"title": "Storyboards:", "value": "['"$REPORT_URL"']('"$REPORT_URL"')"},
                                  {"title": "Reason for Test Run", "value": "${{ env.INPUT_REASON }}"},
                                  {"title": "Initiated By:", "value": "'"${{ github.actor }}"'"}
