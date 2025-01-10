@@ -228,7 +228,7 @@ jobs:
                                "type": "FactSet",
                                "facts": [
                                  {"title": "Storyboards:", "value": "['"$REPORT_URL"']('"$REPORT_URL"')"},
-                                 {"title": "Reason for Test Run", "value": "${{ env.INPUT_REASON }}"}
+                                 {"title": "Reason for Test Run", "value": "${{ env.INPUT_REASON }}"},
                                  {"title": "Initiated By:", "value": "'"${{ github.actor }}"'"}
                               ]
                              }
