@@ -192,6 +192,7 @@ jobs:
           TEST_STATUS: ${{ steps.run-tests.outputs.test-status }}
           REPORT_URL: ${{ steps.configure.outputs.report-url }}
           INPUT_REASON: ${{ steps.configure.outputs.input-reason }}
+          IDP_ENV: ${{ steps.configure.outputs.idp-env }}
         if: always()
         run: |
           # Set the message body dynamically based on TEST_STATUS
@@ -231,7 +232,6 @@ jobs:
                                  {"title": "IdP Web Tests ran on ", "value": "'${{ env.IDP_ENV }}'"},
                                  {"title": "Reason for Test Run was ", "value": "${{ env.INPUT_REASON }}"},
                                  {"title": "Storyboards:", "value": "['"$REPORT_URL"']('"$REPORT_URL"')"},
-                                 {"title": "Reason for Test Run", "value": "${{ env.INPUT_REASON }}"},
                                  {"title": "Initiated By:", "value": "'"${{ github.actor }}"'"}
                               ]
                              }
