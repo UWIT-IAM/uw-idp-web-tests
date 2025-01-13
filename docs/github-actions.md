@@ -55,11 +55,6 @@ something, you might prefer to include the argument
 shutting down the test SP's. Just try to remember to run normally once so that the
 test SPs will be shut down when you're done!
 
-#### `slack-channel`
-
-The channel you want to send output to. This channel must have invited the Github
-Actions Crier (`/invite @iam-github-actions-crier`).
-
 ## Turn off the test Service Providers (SP's)
 
 The test SP's are turned on at the start of testing, but 
