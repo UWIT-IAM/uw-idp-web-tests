@@ -1,4 +1,4 @@
-name: No Slack - Run UW IdP Web Tests
+name: Run UW IdP Web Tests
 
 on:
   push:
@@ -43,6 +43,7 @@ env:
   ###############################################
   # Do not edit the env values below this line. #
   # Other defaults are set in .github/scripts/configure-workflow.sh
+  TEAMS_INTEGRATIONS_DAILY_WEB_TESTS: ${{ secrets.TEAMS_INTEGRATIONS_DAILY_WEB_TESTS }}
   ARTIFACT_BUCKET: ${{ secrets.IDENTITY_ARTIFACT_BUCKET }}
   ###############################################
 
@@ -96,6 +97,48 @@ jobs:
         with:
           version: '>= 363.0.0'
 
+      - name: Notify Teams of Test Run Start
+        env:
+          IDP_ENV: ${{ steps.configure.outputs.idp-env }}
+          INPUT_REASON: ${{ steps.configure.outputs.input-reason }}
+        run: |
+          curl -H "Content-Type: application/json" \
+               -d '{
+                 "type": "message",
+                 "attachments": [
+                   {
+                     "contentType": "application/vnd.microsoft.card.adaptive",
+                     "content": {
+                       "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                       "type": "AdaptiveCard",
+                       "version": "1.4",
+                       "body": [
+                         {
+                           "type": "TextBlock",
+                           "size": "Large",
+                           "weight": "Bolder",
+                           "text": "IDP Test Run Notification"
+                         },
+                         {
+                           "type": "TextBlock",
+                           "text": "Starting - IDP Tests ⏳",
+                           "wrap": true
+                         },
+                         {
+                           "type": "FactSet",
+                           "facts": [
+                               {"title": "IdP Web Tests running on ", "value": "'${{ env.IDP_ENV }}'"},
+                               {"title": "Reason for Test Run", "value": "${{ env.INPUT_REASON }}"},
+                               {"title": "Initiated By:", "value": "'"${{ github.actor }}"'"}
+                           ]
+                         }
+                       ]
+                     }
+                   }
+                 ]
+               }' \
+               "${{ env.TEAMS_INTEGRATIONS_DAILY_WEB_TESTS }}"
+
       - env:
           RUN_TESTS_ARGS: ${{ steps.configure.outputs.run-tests-args }}
           IDP_ENV: ${{ steps.configure.outputs.idp-env }}
@@ -143,3 +186,58 @@ jobs:
             - Test result: ${{ steps.run-tests.outcome }}
             - [Storyboards](${{ env.REPORT_URL }})
             **Commit ${{ env.SHORT_SHA }}**
+
+      - name: Notify Teams of Test Run Completion
+        env:
+          TEST_STATUS: ${{ steps.run-tests.outputs.test-status }}
+          REPORT_URL: ${{ steps.configure.outputs.report-url }}
+          INPUT_REASON: ${{ steps.configure.outputs.input-reason }}
+          IDP_ENV: ${{ steps.configure.outputs.idp-env }}
+        if: always()
+        run: |
+          # Set the message body dynamically based on TEST_STATUS
+          echo "TEST_STATUS=${{ env.TEST_STATUS }}"
+          if [ "$TEST_STATUS" = "succeeded" ]; then
+            test_result="Test run for IDP passed successfully ✅"
+          else
+            test_result="Test run for IDP failed ❌"
+          fi
+
+          # Notify Teams with the status of the test run
+          curl -H "Content-Type: application/json" \
+               -d '{
+                     "type": "message",
+                     "attachments": [
+                       {
+                         "contentType": "application/vnd.microsoft.card.adaptive",
+                         "content": {
+                           "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                           "type": "AdaptiveCard",
+                           "version": "1.4",
+                           "body": [
+                             {
+                               "type": "TextBlock",
+                               "size": "Large",
+                               "weight": "Bolder",
+                               "text": "Completed - IDP Test Run Notification"
+                             },
+                             {
+                               "type": "TextBlock",
+                               "text": "'"$test_result"'",
+                               "wrap": true
+                             },
+                             {
+                               "type": "FactSet",
+                               "facts": [
+                                 {"title": "IdP Web Tests ran on ", "value": "'${{ env.IDP_ENV }}'"},
+                                 {"title": "Reason for Test Run was ", "value": "${{ env.INPUT_REASON }}"},
+                                 {"title": "Storyboards:", "value": "['"$REPORT_URL"']('"$REPORT_URL"')"},
+                                 {"title": "Initiated By:", "value": "'"${{ github.actor }}"'"}
+                              ]
+                             }
+                           ]
+                         }
+                       }
+                     ]
+                   }' \
+               "${{ secrets.TEAMS_INTEGRATIONS_DAILY_WEB_TESTS }}"

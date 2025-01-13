@@ -13,7 +13,7 @@ them all off at the end of the session. This is convenient for the most common u
 running the entire test suite as a scheduled endeavor.
 
 However, the tests don't know if anyone else is running tests at the same time. Therefore, if running
-these manually, it might be a good idea to let the team know. The `#iam-accessmgmt` slack channel is a good place 
+these manually, it might be a good idea to let the team know. The `Access Management Practice` Teams channel is a good place
 to do that. Otherwise, you may shut down the test SPs while someone else is trying to use them (or vice-versa).
 
 ### Lazy SP Lifecycle Management

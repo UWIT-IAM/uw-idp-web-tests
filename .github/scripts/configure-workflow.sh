@@ -106,6 +106,18 @@ function get-run-tests-args() {
   echo "$payload"
 }
 
+function get-input-reason() {
+  # Determine the REASON
+  if [ -n "$INPUT_REASON" ]; then
+    REASON="$INPUT_REASON"
+  elif [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+    REASON="Triggered from PR"
+  else
+    REASON="No reason provided"
+  fi
+  echo "$REASON"
+}
+
 function configure-workflow() {
   local event_name="$GITHUB_EVENT_NAME"
   local actor="$GITHUB_ACTOR"
@@ -121,5 +133,5 @@ function configure-workflow() {
   set-output idp-env "${INPUT_TARGET_IDP_ENV}"
   set-output idp-host "${INPUT_TARGET_IDP_HOST}"
   set-output run-tests-args "$(get-run-tests-args $artifact_object_path)"
-  set-output slack-channel "${INPUT_SLACK_CHANNEL:-#iam-bots}"
+  set-output input-reason "$(get-input-reason)"
 }

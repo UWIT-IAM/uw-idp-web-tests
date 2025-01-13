@@ -7,6 +7,7 @@ repository's [Github Actions UI]:
 - [Turn off the test SPs](#turn-off-the-test-service-providers)
 - [Generate IdP login requests](#generate-idp-login-requests)
 - [Re-build and re-cache the docker image](#re-build-and-re-cache-the-testing-docker-image)
+- [Debugging the Teams notifications and workflows](#debugging-the-teams-notifications-and-workflows)
 
 From the Actions UI, you can click on any workflow and then the "Run Workflow" button
 to get started. If a particular workflow does not have a "Run Workflow" button,
@@ -54,11 +55,6 @@ something, you might prefer to include the argument
 shutting down the test SP's. Just try to remember to run normally once so that the
 test SPs will be shut down when you're done!
 
-#### `slack-channel`
-
-The channel you want to send output to. This channel must have invited the Github
-Actions Crier (`/invite @iam-github-actions-crier`).
-
 ## Turn off the test Service Providers (SP's)
 
 The test SP's are turned on at the start of testing, but 
@@ -90,6 +86,15 @@ summary.
 
 ## Re-build and re-cache the testing docker image
 
+
+## Debugging the Teams notifications and workflows
+Sometime, you might find it handy to debug the workflows and not have the tests run.
+When you want to turn off the tests to debug some other part of the workflows, you can disable the test part.
+Go to [docker-compose.yml] (https://github.com/UWIT-IAM/uw-idp-web-tests/blob/mainline/docker-compose.yml)
+Remove the line `command: pytest ${PYTEST_ARGS} --selenium-server selenium:4444` and replace it with another command.
+You can replace to with `command: echo "The test would start here"`.
+That will not run the tests and instead, it will put an entry in the logs/terminal that says "The test would start here".
+You'll still see the test run and end notifications but the tests won't run.
 
 [test workflow]: https://github.com/UWIT-IAM/uw-idp-web-tests/actions/workflows/automated-idp-web-tests.yml
 [Github Actions UI]: https://github.com/uwit-iam/uw-idp-web-tests/actions
