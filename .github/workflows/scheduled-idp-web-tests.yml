@@ -79,13 +79,6 @@ jobs:
         env:
           storyboard_url: https://identity-artifact.iamdev.s.uw.edu/
           workflow_link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        outputs:
-          idp-env: ${{ steps.configure.outputs.idp-env }}
-
-      - id: configure
-        run: echo configuring="configuring" >> $GITHUB_OUTPUT
-        env:
-          INPUT_TARGET_IDP_ENV: ${{ matrix.idp_env }}
 
       - uses: UWIT-IAM/actions/configure-gcloud-docker-gcloud-v101@0.1.17
         with:
@@ -93,7 +86,7 @@ jobs:
 
       - name: Notify Teams of Test Run Start
         env:
-          IDP_ENV: ${{ env.INPUT_TARGET_IDP_ENV }}
+          IDP_ENV: ${{ matrix.idp_env }}
           INPUT_REASON: ${{ steps.config.outputs.input-reason }}
         run: |
           curl -H "Content-Type: application/json" \
