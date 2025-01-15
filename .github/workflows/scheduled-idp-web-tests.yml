@@ -97,17 +97,17 @@ jobs:
                                "type": "TextBlock",
                                "size": "Large",
                                "weight": "Bolder",
-                               "text": "Starting - IDP Test Run Notification"
+                               "text": "IDP Test Run Notification"
                              },
                              {
                                "type": "TextBlock",
-                               "text": "'"$test_result"'",
+                               "text": "Starting - IDP Tests ⏳",
                                "wrap": true
                              },
                              {
                                "type": "FactSet",
                                "facts": [
-                                 {"title": "Reason for Test Run", "value": "GlenHardcodedReason"}
+                                 {"title": "Reason for Test Run", "value": "GlenHardcodedReasonStart"}
                               ]
                              }
                            ]
