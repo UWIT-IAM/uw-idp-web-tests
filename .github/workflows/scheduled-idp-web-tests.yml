@@ -40,6 +40,14 @@ on:
           supply `log_cli` arguments.
         required: false
 
+env:
+  ###############################################
+  # Do not edit the env values below this line. #
+  # Other defaults are set in .github/scripts/configure-workflow.sh
+  TEAMS_INTEGRATIONS_DAILY_WEB_TESTS: ${{ secrets.TEAMS_INTEGRATIONS_DAILY_WEB_TESTS }}
+  ARTIFACT_BUCKET: ${{ secrets.IDENTITY_ARTIFACT_BUCKET }}
+  ###############################################
+
 jobs:
   run-web-tests:
     strategy:
@@ -115,7 +123,7 @@ jobs:
                        }
                      ]
                    }' \
-                   "${{ secrets.TEAMS_INTEGRATIONS_DAILY_WEB_TESTS }}"
+                   "${{ env.TEAMS_INTEGRATIONS_DAILY_WEB_TESTS }}"
 
       - name: Run tests
         run: ./scripts/run-tests.sh -- --env ${{ matrix.idp_env }}
