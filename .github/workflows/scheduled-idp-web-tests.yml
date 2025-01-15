@@ -79,7 +79,13 @@ jobs:
         env:
           storyboard_url: https://identity-artifact.iamdev.s.uw.edu/
           workflow_link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        outputs:
+          idp-env: ${{ steps.configure.outputs.idp-env }}
 
+      - id: configure
+        run: echo configuring="configuring" >> $GITHUB_OUTPUT
+        env:
+          INPUT_TARGET_IDP_ENV: ${{ matrix.idp_env }}
 
       - uses: UWIT-IAM/actions/configure-gcloud-docker-gcloud-v101@0.1.17
         with:
@@ -87,8 +93,8 @@ jobs:
 
       - name: Notify Teams of Test Run Start
         env:
-          IDP_ENV: ${{ steps.configure.outputs.idp-env }}
-          INPUT_REASON: ${{ steps.configure.outputs.input-reason }}
+          IDP_ENV: ${{ env.INPUT_TARGET_IDP_ENV }}
+          INPUT_REASON: ${{ steps.config.outputs.input-reason }}
         run: |
           curl -H "Content-Type: application/json" \
                -d '{
@@ -115,6 +121,7 @@ jobs:
                              {
                                "type": "FactSet",
                                "facts": [
+                                 {"title": "IdP Web Tests running on ", "value": "'${{ env.IDP_ENV }}'"},
                                  {"title": "Reason for Test Run", "value": "GlenHardcodedReasonStart"}
                               ]
                              }
@@ -162,9 +169,9 @@ jobs:
       - name: Notify Teams of Test Run Completion
         env:
           TEST_STATUS: ${{ steps.run-tests.outputs.test-status }}
-          REPORT_URL: ${{ steps.configure.outputs.report-url }}
-          INPUT_REASON: ${{ steps.configure.outputs.input-reason }}
-          IDP_ENV: ${{ steps.configure.outputs.idp-env }}
+          REPORT_URL: ${{ steps.config.outputs.report-url }}
+          INPUT_REASON: ${{ steps.config.outputs.input-reason }}
+          IDP_ENV: ${{ env.idp_env }}
         if: always()
         run: |
           # Set the message body dynamically based on TEST_STATUS
@@ -201,6 +208,7 @@ jobs:
                              {
                                "type": "FactSet",
                                "facts": [
+                                 {"title": "IdP Web Tests ran on ", "value": "'${{ env.IDP_ENV }}'"},
                                  {"title": "Reason for Test Run", "value": "GlenHardcodedReason"}
                               ]
                              }
