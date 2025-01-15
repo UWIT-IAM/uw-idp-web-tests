@@ -1,4 +1,4 @@
-name: No Slack - Scheduled UW IdP Test Matrix
+name: Scheduled UW IdP Test Matrix
 
 on:
   push:
@@ -77,6 +77,45 @@ jobs:
         with:
           gcloud-token: ${{ secrets.TEST_RUNNER_GOOGLE_TOKEN }}
 
+      - name: Notify Teams of Test Run Start
+        env:
+          IDP_ENV: ${{ steps.configure.outputs.idp-env }}
+          INPUT_REASON: ${{ steps.configure.outputs.input-reason }}
+        run: |
+          curl -H "Content-Type: application/json" \
+               -d '{
+                     "type": "message",
+                     "attachments": [
+                       {
+                         "contentType": "application/vnd.microsoft.card.adaptive",
+                         "content": {
+                           "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                           "type": "AdaptiveCard",
+                           "version": "1.4",
+                           "body": [
+                             {
+                               "type": "TextBlock",
+                               "size": "Large",
+                               "weight": "Bolder",
+                               "text": "Starting - IDP Test Run Notification"
+                             },
+                             {
+                               "type": "TextBlock",
+                               "text": "'"$test_result"'",
+                               "wrap": true
+                             },
+                             {
+                               "type": "FactSet",
+                               "facts": [
+                                 {"title": "Reason for Test Run", "value": "GlenHardcodedReason"}
+                              ]
+                             }
+                           ]
+                         }
+                       }
+                     ]
+                   }' \
+                   "${{ secrets.TEAMS_INTEGRATIONS_DAILY_WEB_TESTS }}"
 
       - name: Run tests
         run: ./scripts/run-tests.sh -- --env ${{ matrix.idp_env }}
@@ -105,9 +144,62 @@ jobs:
 
       - if: >
           always()
-          && steps.post-run.outputs.upload_storyboards =='true'
+          && steps.post-run.outputs.upload_storyboards == 'true'
           && steps.upload-storyboards.outcome == 'success'
         name: Set notices on workflow
         env:
           storyboard_link: ${{ steps.config.outputs.storyboard_link }}
         run: echo "::notice::Storyboards located at ${{ env.storyboard_link }}"
+
+      - name: Notify Teams of Test Run Completion
+        env:
+          TEST_STATUS: ${{ steps.run-tests.outputs.test-status }}
+          REPORT_URL: ${{ steps.configure.outputs.report-url }}
+          INPUT_REASON: ${{ steps.configure.outputs.input-reason }}
+          IDP_ENV: ${{ steps.configure.outputs.idp-env }}
+        if: always()
+        run: |
+          # Set the message body dynamically based on TEST_STATUS
+          echo "TEST_STATUS=${{ env.TEST_STATUS }}"
+          if [ "$TEST_STATUS" = "succeeded" ]; then
+            test_result="Test run for IDP passed successfully ✅"
+          else
+            test_result="Test run for IDP failed ❌"
+          fi
+
+          # Notify Teams with the status of the test run
+          curl -H "Content-Type: application/json" \
+               -d '{
+                     "type": "message",
+                     "attachments": [
+                       {
+                         "contentType": "application/vnd.microsoft.card.adaptive",
+                         "content": {
+                           "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                           "type": "AdaptiveCard",
+                           "version": "1.4",
+                           "body": [
+                             {
+                               "type": "TextBlock",
+                               "size": "Large",
+                               "weight": "Bolder",
+                               "text": "Completed - IDP Test Run Notification"
+                             },
+                             {
+                               "type": "TextBlock",
+                               "text": "'"$test_result"'",
+                               "wrap": true
+                             },
+                             {
+                               "type": "FactSet",
+                               "facts": [
+                                 {"title": "Reason for Test Run", "value": "GlenHardcodedReason"}
+                              ]
+                             }
+                           ]
+                         }
+                       }
+                     ]
+                   }' \
+               "${{ secrets.TEAMS_INTEGRATIONS_DAILY_WEB_TESTS }}"
+
