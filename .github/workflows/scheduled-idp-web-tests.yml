@@ -76,6 +76,8 @@ jobs:
           echo report_dir=${report_dir} >> $GITHUB_OUTPUT
           echo storyboard_link=${storyboard_url}/${report_dir}/index.html >> $GITHUB_OUTPUT
           echo workflow_link=${{ env.workflow_link }} >> $GITHUB_OUTPUT
+          source ./.github/scripts/configure-workflow.sh
+          configure-workflow-scheduled
         env:
           storyboard_url: https://identity-artifact.iamdev.s.uw.edu/
           workflow_link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -232,7 +234,8 @@ jobs:
                                "type": "FactSet",
                                "facts": [
                                  {"title": "IdP Web Tests ran on ", "value": "'${{ env.IDP_ENV }}'"},
-                                 {"title": "Reason for Test Run", "value": "${{ env.INPUT_REASON }}"}
+                                 {"title": "Reason for Test Run", "value": "${{ env.INPUT_REASON }}"},
+                                 {"title": "Storyboards:", "value": "['"$REPORT_URL"']('"$REPORT_URL"')"}
                               ]
                              }
                            ]
