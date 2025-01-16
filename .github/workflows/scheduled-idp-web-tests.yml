@@ -146,13 +146,17 @@ jobs:
           exit_status=0
           if ./scripts/run-tests.sh -- --env ${{ matrix.idp_env }}
           then
-            echo "All tests succeeded for ${{ env.IDP_ENV }} succeeded! "
+            echo "All tests succeeded for ${{ matrix.idp_env }}! "
             test_status=succeeded
           else
             exit_status=$?
-            echo "Tests for ${{ env.IDP_ENV }} failed with status $exit_status"
+            echo "Tests for ${{ matrix.idp_env }} failed with status $exit_status"
             test_status=failed
           fi
+
+          echo "test-status=$test_status" >> $GITHUB_OUTPUT
+          echo "upload-artifacts=true" >> $GITHUB_OUTPUT
+          exit  $exit_status
 
       - name: Determine post-test actions
         if: always()
