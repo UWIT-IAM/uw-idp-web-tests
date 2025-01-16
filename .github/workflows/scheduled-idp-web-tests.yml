@@ -142,6 +142,7 @@ jobs:
       #   id: run-tests
 
       - name: Run tests
+        id: run-tests
         run: |
           exit_status=0
           if ./scripts/run-tests.sh -- --env ${{ matrix.idp_env }}
