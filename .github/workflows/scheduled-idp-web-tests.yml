@@ -194,7 +194,7 @@ jobs:
       - name: Notify Teams of Test Run Completion
         env:
           TEST_STATUS: ${{ steps.run-tests.outputs.test-status }}
-          REPORT_URL: ${{ steps.config.outputs.report-url }}
+          REPORT_URL:  ${{ steps.config.outputs.storyboard_link }}
           INPUT_REASON: ${{ steps.configure.outputs.input-reason }}
           IDP_ENV: ${{ matrix.idp_env }}
         if: always()
