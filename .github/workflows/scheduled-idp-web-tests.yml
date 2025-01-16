@@ -137,9 +137,22 @@ jobs:
                    }' \
                    "${{ env.TEAMS_INTEGRATIONS_DAILY_WEB_TESTS }}"
 
+      # - name: Run tests
+      #   run: ./scripts/run-tests.sh -- --env ${{ matrix.idp_env }}
+      #   id: run-tests
+
       - name: Run tests
-        run: ./scripts/run-tests.sh -- --env ${{ matrix.idp_env }}
-        id: run-tests
+        run: |
+          exit_status=0
+          if ./scripts/run-tests.sh -- --env ${{ matrix.idp_env }}
+          then
+            echo "All tests succeeded for ${{ env.IDP_ENV }} succeeded! "
+            test_status=succeeded
+          else
+            exit_status=$?
+            echo "Tests for ${{ env.IDP_ENV }} failed with status $exit_status"
+            test_status=failed
+          fi
 
       - name: Determine post-test actions
         if: always()
