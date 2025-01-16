@@ -139,7 +139,7 @@ jobs:
 
       - name: Run tests
         run: ./scripts/run-tests.sh -- --env ${{ matrix.idp_env }}
-        id: run
+        id: run-tests
 
       - name: Determine post-test actions
         if: always()
