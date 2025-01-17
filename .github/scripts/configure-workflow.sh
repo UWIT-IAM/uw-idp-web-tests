@@ -112,6 +112,8 @@ function get-input-reason() {
     REASON="$INPUT_REASON"
   elif [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
     REASON="Triggered from PR"
+  elif [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
+    REASON="Scheduled run"
   else
     REASON="No reason provided"
   fi
@@ -135,3 +137,4 @@ function configure-workflow() {
   set-output run-tests-args "$(get-run-tests-args $artifact_object_path)"
   set-output input-reason "$(get-input-reason)"
 }
+

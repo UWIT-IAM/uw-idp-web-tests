@@ -95,6 +95,10 @@ Remove the line `command: pytest ${PYTEST_ARGS} --selenium-server selenium:4444`
 You can replace to with `command: echo "The test would start here"`.
 That will not run the tests and instead, it will put an entry in the logs/terminal that says "The test would start here".
 You'll still see the test run and end notifications but the tests won't run.
+You can also run a specific test with this command:
+`command: pytest ${PYTEST_ARGS} --selenium-server selenium:4444 path/to/testfile` or
+`command: pytest ${PYTEST_ARGS} --selenium-server selenium:4444 path/to/testfile::<test_name>`
+`command: pytest ${PYTEST_ARGS} --selenium-server selenium:4444 tests/test_2fa_duo.py::test_remember_me_cookie`
 
 [test workflow]: https://github.com/UWIT-IAM/uw-idp-web-tests/actions/workflows/automated-idp-web-tests.yml
 [Github Actions UI]: https://github.com/uwit-iam/uw-idp-web-tests/actions

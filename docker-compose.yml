@@ -34,6 +34,7 @@ services:
       - ${CREDENTIAL_MOUNT_POINT}:/secrets:ro
       - ${REPORT_MOUNT_POINT}:/tmp/webdriver-report
     command: pytest ${PYTEST_ARGS} --selenium-server selenium:4444
+    # command: pytest ${PYTEST_ARGS} --selenium-server selenium:4444 tests/test_2fa_duo.py::test_remember_me_cookie #If you want to run one more specific tests, use this command instead of the above.
     # command: echo "The test would start here" #If you don't want the tests to run, and test other things like notifications, use this command instead of the above.
 
   selenium:
