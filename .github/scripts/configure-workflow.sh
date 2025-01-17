@@ -138,9 +138,3 @@ function configure-workflow() {
   set-output input-reason "$(get-input-reason)"
 }
 
-function configure-workflow-scheduled() {
-  local event_name="$GITHUB_EVENT_NAME"
-  local artifact_object_path=$(get-report-output-path $event_name)
-  INPUT_TARGET_IDP_ENV="${INPUT_TARGET_IDP_ENV:-eval}"
-  set-output report-url "$ARTIFACT_DOMAIN/$artifact_object_path/index.html"
-}
