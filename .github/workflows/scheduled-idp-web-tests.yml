@@ -54,8 +54,7 @@ jobs:
           echo report_dir=${report_dir} >> $GITHUB_OUTPUT
           echo storyboard_link=${storyboard_url}/${report_dir}/index.html >> $GITHUB_OUTPUT
           echo workflow_link=${{ env.workflow_link }} >> $GITHUB_OUTPUT
-          source ./.github/scripts/configure-workflow.sh
-          configure-workflow-scheduled
+
         env:
           storyboard_url: https://identity-artifact.iamdev.s.uw.edu/
           workflow_link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -66,12 +65,7 @@ jobs:
 
       - id: configure
         env:
-          # INPUT_TARGET_IDP_ENV: ${{ github.event.inputs.target-idp-env }}
-          # INPUT_TARGET_IDP_HOST: ${{ github.event.inputs.target-idp-host }}
           INPUT_REASON: ${{ github.event.inputs.reason }}
-          # INPUT_PYTEST_ARGS: ${{ github.event.inputs.pytest-args }}
-          # UWCA_CERT: ${{ secrets.UWCA_CERT }}
-          # UWCA_KEY: ${{ secrets.UWCA_KEY }}
         run: |
           source ./.github/scripts/configure-workflow.sh
           configure-workflow
@@ -96,7 +90,7 @@ jobs:
                                "type": "TextBlock",
                                "size": "Large",
                                "weight": "Bolder",
-                               "text": "IDP Test Run Notification"
+                               "text": "Scheduled UW IdP Test Matrix Run"
                              },
                              {
                                "type": "TextBlock",
@@ -117,9 +111,6 @@ jobs:
                    }' \
                    "${{ env.TEAMS_INTEGRATIONS_DAILY_WEB_TESTS }}"
 
-      # - name: Run tests
-      #   run: ./scripts/run-tests.sh -- --env ${{ matrix.idp_env }}
-      #   id: run-tests
 
       - name: Run tests
         id: run-tests
@@ -201,7 +192,7 @@ jobs:
                                "type": "TextBlock",
                                "size": "Large",
                                "weight": "Bolder",
-                               "text": "Completed - IDP Test Run Notification"
+                               "text": "Completed - Scheduled UW IdP Test Matrix Run"
                              },
                              {
                                "type": "TextBlock",
