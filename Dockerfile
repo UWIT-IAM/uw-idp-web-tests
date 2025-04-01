@@ -5,7 +5,7 @@ RUN apt-get update && apt-get -y install curl jq dnsutils
 FROM apt-base as poetry-base
 WORKDIR /uw-idp-tests
 COPY poetry.lock pyproject.toml scripts/entrypoint.sh ./
-RUN poetry install
+RUN poetry install --no-root
 
 FROM poetry-base AS test-runner
 COPY settings.yaml ./
