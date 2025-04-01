@@ -15,6 +15,7 @@ from webdriver_recorder.browser import Chrome
 
 from tests.helpers import Locators
 from tests.models import ServiceProviderInstance
+from selenium.webdriver.common.by import By
 
 
 def add_suffix(suffix: str, netid: str) -> str:
@@ -103,7 +104,7 @@ class TestCredentialsAndForcedReauth:
             self.browser.send_inputs(bad_netid, self.password)
             self.browser.click(Locators.submit_button)
             self.browser.wait_for_tag('p', 'Your sign-in failed.')
-            element = self.browser.find_element_by_id('weblogin_netid')
+            element = self.browser.find_element(By.ID, 'weblogin_netid')
             element.click()
             element.clear()
             bad_password = '1'
@@ -208,6 +209,6 @@ class TestNetIDCaseInsensitivityAndURLQueryParams:
             self.browser.snap()
             self.browser.get(url)
             self.browser.wait_for_tag('h1', 'query parameters')
-            element = self.browser.find_elements_by_tag_name('p')
+            element = self.browser.find_elements(By.TAG_NAME, 'p')
             for snippet in ('fname = Joe', 'lname = Smith', 'age = 30'):
                 assert (snippet in element[1].text)
