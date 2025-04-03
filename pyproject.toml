@@ -1,11 +1,12 @@
 [tool.poetry]
 name = "uw-idp-web-tests"
 version = "0.1.0"
+package-mode = false
 description = ""
 authors = ["Tom Thorogood <goodtom@uw.edu>", "Glen Goulter <glenrg@uw.edu>"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.10"
 black = "^21.5b2"
 boto3 = "^1.17.92"
 click = "^8.0.1"
@@ -14,7 +15,7 @@ inflection = "^0.5.1"
 nslookup = "^1.4.0"
 pydantic = "^1.8.2"
 pytest = "^6.2.4"
-PyYAML = "^5.4.1"
+PyYAML = "^6.0.2"
 typing-extensions = "^3.10.0"
 # Pinned until https://github.com/UWIT-IAM/webdriver-recorder/pull/25
 # is merged and released.

@@ -168,7 +168,7 @@ class Test2FASessionCRNs:
             self.browser.send_inputs(netid10, self.password)
             self.browser.click(Locators.submit_button)
             self.browser.wait_for_tag('div', 'Select a UW NetID for 2nd factor authentication.')
-            self.browser.find_element_by_xpath("//input[@value='sptest07']").click()
+            self.browser.find_element(By.XPATH, "//input[@value='sptest07']").click()
             self.browser.click(Locators.submit_button)
             enter_duo_passcode(self.browser, match_service_provider=self.sp)
 
@@ -196,7 +196,7 @@ def test_remember_me_cookie(
         Select the other duo option, to get to the bypass code option
         """
         wait = WebDriverWait(fresh_browser, 10)
-        wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(text(), 'Other options')]")))
+        wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Other options')]")))
         enter_duo_passcode(fresh_browser, match_service_provider=sp, select_this_is_my_device=True)
 
         # go to an idp site to retrieve the shib idp cookies
