@@ -170,6 +170,10 @@ class Test2FASessionCRNs:
             self.browser.wait_for_tag('div', 'Select a UW NetID for 2nd factor authentication.')
             self.browser.find_element(By.XPATH, "//input[@value='sptest07']").click()
             self.browser.click(Locators.submit_button)
+            # wait for the warning and continue button to appear, then click continue
+            self.browser.wait_for_tag(By.XPATH, "//span[contains(text(), 'Action Required: Add Recovery Info to your UW NetID')]")
+            self.browser.wait_for_tag(By.XPATH, "//input[@id='submit_button' and @value='Continue']")
+            self.browser.click(Locators.submit_button)
             enter_duo_passcode(self.browser, match_service_provider=self.sp)
 
 
