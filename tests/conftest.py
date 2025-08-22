@@ -200,6 +200,7 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
             retry: Optional[bool] = False,
             is_this_your_device_screen: Optional[bool] = True,
             select_this_is_my_device: Optional[bool] = False,
+            click_continue_recovery_info: Optional[bool] = False,
     ):
         """
         :param current_browser: The browser you want to invoke these actions on.
@@ -231,6 +232,8 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
                                              screen, ex: an auto 2fa where the user already has given an answer prior
                                              and then switches diafines.
         :param select_this_is_my_device: Optional. Defaults to False, since in most cases we don't want duo.com to set a rememberme style cookie.
+        :param click_continue_recovery_info: Optional. Defaults to False, since in most cases we don't want to click the continue button on the recovery info warning screen.
+                                              This is only needed when we are specifically testing the recovery info warning screen.
         """
         passcode_matches_default = passcode == default_passcode
 
@@ -270,9 +273,16 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
                     EC.element_to_be_clickable((By.XPATH, "//button[@id='dont-trust-browser-button' "
                                                           "and text()='No, other people use this "
                                                           "device']")))
-
             element.click()
         current_browser.snap()
+
+        if click_continue_recovery_info:
+            # this is a special case where we are testing the recovery info warning that appears after 2fa
+            # so we need to wait for the warning and then the continue button to appear
+            current_browser.wait_for_tag('span', 'Action Required: Add Recovery Info to your UW NetID')
+            # wait for the continue button to appear
+            wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@id='submit_button' and @value='Continue']"))).click()
+            current_browser.snap()
 
         if assert_success:
             sp = sp_domain(match_service_provider) if match_service_provider else ''

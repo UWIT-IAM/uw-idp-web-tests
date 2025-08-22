@@ -92,7 +92,7 @@ then
   docker build --build-arg SOURCE_TAG -t ghcr.io/uwit-iam/idp-web-tests:latest .
   set +e
 else
-  docker pull ghcr.io/uwit-iam/idp-web-tests:latest
+  docker pull --platform linux/amd64 ghcr.io/uwit-iam/idp-web-tests:latest
 fi
 
 function add_strict_host_override() {
