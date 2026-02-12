@@ -196,7 +196,7 @@ def test_remember_me_cookie(
         Select the other duo option, to get to the bypass code option
         """
         wait = WebDriverWait(fresh_browser, 10)
-        wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(text(), 'Other options')]")))
+        wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Other options')]")))
         enter_duo_passcode(fresh_browser, match_service_provider=sp, select_this_is_my_device=True)
 
         # go to an idp site to retrieve the shib idp cookies

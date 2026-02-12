@@ -174,8 +174,8 @@ def duo_push(current_browser: Chrome):
     Select the other duo option, to get to the bypass code option
     """
     wait = WebDriverWait(current_browser, 10)
-    wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(text(), 'Other options')]")))
-    current_browser.wait_for_tag('a', 'Other options').click()
+    wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Other options')]")))
+    current_browser.wait_for_tag('button', 'Other options').click()
     current_browser.wait_for_tag('b', 'Other options to log in')
 
 
