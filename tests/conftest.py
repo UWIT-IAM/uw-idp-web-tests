@@ -176,7 +176,6 @@ def duo_push(current_browser: Chrome):
     wait = WebDriverWait(current_browser, 10)
     wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Other options')]")))
     current_browser.wait_for_tag('button', 'Other options').click()
-    current_browser.wait_for_tag('b', 'Other options to log in')
 
 
 def clear_passcode(current_browser: Chrome, element):
@@ -244,32 +243,39 @@ def enter_duo_passcode(secrets, sp_domain, test_env) -> Callable[..., NoReturn]:
             duo_push(current_browser)
 
         wait = WebDriverWait(current_browser, 10)
+        current_browser.snap('looking for bypass code button')
         if retry:
             element = wait.until(EC.element_to_be_clickable((By.XPATH,
                                                              "//input[contains(@id, 'passcode-input')]")))
         else:
-            element = wait.until(EC.visibility_of_element_located((By.XPATH,
-                                                                   "//div[contains(text(), 'Bypass code') and "
-                                                                   "contains(@class, 'row') and contains(@class, "
-                                                                   "'display-flex')]")))
+            element = wait.until(EC.element_to_be_clickable((By.XPATH,
+                "//div[contains(@class, 'method-label') and normalize-space()='Bypass Code']"
+                )))
 
-        current_browser.snap()
+        current_browser.snap('found bypass code button')
         element.click()
-        current_browser.snap()
+        current_browser.snap('clicked bypass code button')
         if retry:
             clear_passcode(current_browser, element)
         current_browser.send_inputs(passcode)
-        current_browser.snap()
+        current_browser.snap('sent passcode')
         current_browser.wait_for_tag('button', 'Verify').click()
 
+        current_browser.snap('clicked verify button')
         if is_this_your_device_screen:
+            current_browser.snap('looking for "is this your device" screen')
             if select_this_is_my_device:
-                element = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@id='trust-browser-button']")))
-            else:
-                element = wait.until(
-                    EC.element_to_be_clickable((By.XPATH, "//button[@id='dont-trust-browser-button' "
-                                                          "and text()='No, other people use this "
+                current_browser.snap('looking for "Yes, this is my device" button')
+                element = wait.until(EC.element_to_be_clickable((By.XPATH, "//button["
+                                                          "text()='Yes, this is my "
                                                           "device']")))
+            else:
+                current_browser.snap('looking for "No, other people use this device" button')
+                element = wait.until(
+                    EC.element_to_be_clickable((By.XPATH, "//button["
+                                                          "text()='No, other people use this "
+                                                          "device']")))
+                current_browser.snap('found "No, other people use this device" button')
 
             element.click()
         current_browser.snap()
